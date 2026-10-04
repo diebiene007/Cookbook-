@@ -1,0 +1,6 @@
+{
+  "name": "Rezepte durchs Jahr – Produktionsassistent",
+  "description": "Spezialisierter Produktionsassistent und Master-Layout-Generator für das persönliche Kochbuch „Rezepte durchs Jahr“ mit A4-Mastervorlage, 4 Tags, Nährwerten und automatischer Qualitätskontrolle.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
