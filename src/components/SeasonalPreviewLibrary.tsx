@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RecipePageData, Season } from '../types/recipe';
 import { CustomBackground, BackgroundCategory } from '../types/backgrounds';
+import { getSeasonTagStyle } from '../utils/seasonTagTheme';
 import {
   Grid,
   List,
@@ -174,20 +175,12 @@ export const SeasonalPreviewLibrary: React.FC<SeasonalPreviewLibraryProps> = ({
                           title={`Allen ${seasonRecipes.length} ${season}-Rezepten den Hintergrund „${bg.name}“ zuweisen`}
                         >
                           <span
-                            className="w-3 h-3 rounded-xs shrink-0 border overflow-hidden relative"
+                            className="w-2.5 h-2.5 rounded-sm shrink-0 border"
                             style={{
                               backgroundColor: bg.previewColor,
                               borderColor: bg.previewBorderColor || '#D5C4B4',
                             }}
-                          >
-                            {bg.previewImageUrl && (
-                              <img
-                                src={bg.previewImageUrl}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            )}
-                          </span>
+                          />
                           <span className="truncate max-w-[120px]">{bg.name}</span>
                           <span className="text-[9px] text-[#c46637] font-semibold">Alle</span>
                         </button>
@@ -259,6 +252,24 @@ export const SeasonalPreviewLibrary: React.FC<SeasonalPreviewLibraryProps> = ({
                             <span>{recipe.category}</span>
                             <span className="text-[#c46637] font-semibold">{recipe.masterVariant}er Vorlage</span>
                           </div>
+
+                          {/* Seasonal Left-to-Right Gradient Tags */}
+                          <div className="flex flex-wrap gap-1 mb-1.5 overflow-hidden">
+                            {recipe.tags.slice(0, 2).map((t, tIdx) => (
+                              <span
+                                key={tIdx}
+                                style={getSeasonTagStyle(recipe.season)}
+                                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-full border truncate max-w-[85px]"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                            {recipe.tags.length > 2 && (
+                              <span className="text-[8px] text-[#8e8074] self-center">
+                                +{recipe.tags.length - 2}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Background Identity Badge */}
@@ -267,20 +278,12 @@ export const SeasonalPreviewLibrary: React.FC<SeasonalPreviewLibraryProps> = ({
                           title={`Hintergrund: ${bg.name}`}
                         >
                           <span
-                            className="w-3 h-3 rounded-xs shrink-0 border overflow-hidden relative"
+                            className="w-2.5 h-2.5 rounded-xs shrink-0 border"
                             style={{
                               backgroundColor: bg.previewColor,
                               borderColor: bg.previewBorderColor || '#D5C4B4',
                             }}
-                          >
-                            {bg.previewImageUrl && (
-                              <img
-                                src={bg.previewImageUrl}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            )}
-                          </span>
+                          />
                           <span className="text-[#baa99b] truncate">{bg.name}</span>
                         </div>
                       </div>

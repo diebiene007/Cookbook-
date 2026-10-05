@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { RecipePageData, Season, Category, MasterVariant, IngredientGroup } from '../types/recipe';
 import { BackgroundCategory, CustomBackground } from '../types/backgrounds';
+import { RecipeImageGeneratorModal } from './RecipeImageGeneratorModal';
+import { getSeasonTagStyle, SeasonTag } from '../utils/seasonTagTheme';
+import {
+  getPageBackgroundsForSeason,
+  getDefaultPageBackgroundForSeason,
+  getPageBackgroundById,
+} from '../data/recipePageBackgrounds';
+import { SeasonalBackgroundThumbnail } from './SeasonalBackgroundThumbnail';
 import {
   Tag,
   Clock,
@@ -15,6 +23,8 @@ import {
   Flame,
   Palette,
   Check,
+  X,
+  RotateCcw,
 } from 'lucide-react';
 
 interface DetailEditorProps {
@@ -25,7 +35,9 @@ interface DetailEditorProps {
   onOpenBackgroundManager?: () => void;
 }
 
-const COMMON_TAGS = [
+const QUICK_TAGS_STORAGE_KEY = 'rezepte_durchs_jahr_quick_tags_v1';
+
+const DEFAULT_QUICK_TAGS: string[] = [
   'HIGH PROTEIN',
   'SCHNELL',
   'MEAL PREP',
@@ -77,6 +89,73 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
   const [activeTab, setActiveTab] = useState<
     'basis' | 'blick' | 'zutaten' | 'schritte' | 'naehrwerte' | 'foto'
   >('basis');
+  const [selectedTagIndex, setSelectedTagIndex] = useState<number | null>(null);
+  const [isImageGeneratorOpen, setIsImageGeneratorOpen] = useState<boolean>(false);
+
+  // Managed persistent quick tags state
+  const [quickTags, setQuickTags] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(QUICK_TAGS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load quick tags from localStorage', err);
+    }
+    return DEFAULT_QUICK_TAGS;
+  });
+
+  const [isAddingTag, setIsAddingTag] = useState<boolean>(false);
+  const [newTagInput, setNewTagInput] = useState<string>('');
+  const [tagError, setTagError] = useState<string | null>(null);
+
+  const saveQuickTags = (updatedTags: string[]) => {
+    setQuickTags(updatedTags);
+    try {
+      localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(updatedTags));
+    } catch (err) {
+      console.error('Failed to save quick tags to localStorage', err);
+    }
+  };
+
+  const handleAddCustomQuickTag = () => {
+    const trimmed = newTagInput.trim().toUpperCase();
+    if (!trimmed) {
+      setIsAddingTag(false);
+      setNewTagInput('');
+      setTagError(null);
+      return;
+    }
+    if (trimmed.length > 26) {
+      setTagError('Maximal 26 Zeichen erlaubt');
+      return;
+    }
+    if (quickTags.some(t => t.toUpperCase() === trimmed)) {
+      setTagError(`„${trimmed}“ existiert bereits in der Schnellauswahl`);
+      return;
+    }
+
+    const updated = [...quickTags, trimmed];
+    saveQuickTags(updated);
+    setNewTagInput('');
+    setIsAddingTag(false);
+    setTagError(null);
+  };
+
+  const handleDeleteQuickTag = (e: React.MouseEvent, tagToDelete: string) => {
+    e.stopPropagation();
+    const updated = quickTags.filter(t => t !== tagToDelete);
+    saveQuickTags(updated);
+    setTagError(null);
+  };
+
+  const handleResetQuickTags = () => {
+    saveQuickTags(DEFAULT_QUICK_TAGS);
+    setTagError(null);
+  };
 
   const update = (patch: Partial<RecipePageData>) => {
     onChange({ ...recipe, ...patch, updatedAt: new Date().toISOString() });
@@ -91,15 +170,25 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
 
   // Helper for quick tags chip click
   const handleAddQuickTag = (tag: string) => {
-    const current = [...recipe.tags];
-    const emptyIndex = current.findIndex(t => !t || t.startsWith('TAG'));
-    if (emptyIndex !== -1) {
-      current[emptyIndex] = tag;
-      update({ tags: current as [string, string, string, string] });
+    const current = [...recipe.tags] as [string, string, string, string];
+
+    if (selectedTagIndex !== null && selectedTagIndex >= 0 && selectedTagIndex < 4) {
+      // Exakt den ausgewählten Tag am Index ersetzen
+      current[selectedTagIndex] = tag;
+      update({ tags: current });
+      // Auswahlzustand automatisch aufheben
+      setSelectedTagIndex(null);
     } else {
-      // replace last tag
-      current[3] = tag;
-      update({ tags: current as [string, string, string, string] });
+      // Wenn kein Tag ausgewählt ist: Erste leere Position füllen
+      const emptyIndex = current.findIndex(t => !t || t.trim() === '' || t.startsWith('TAG'));
+      if (emptyIndex !== -1) {
+        current[emptyIndex] = tag;
+        update({ tags: current });
+      } else {
+        // Fallback: Wenn alle 4 belegt sind und keiner ausgewählt ist, den 4. Tag ersetzen
+        current[3] = tag;
+        update({ tags: current });
+      }
     }
   };
 
@@ -316,7 +405,14 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
               </label>
               <select
                 value={recipe.season}
-                onChange={e => update({ season: e.target.value as Season })}
+                onChange={e => {
+                  const newSeason = e.target.value as Season;
+                  const newDefaultPageBg = getDefaultPageBackgroundForSeason(newSeason);
+                  update({
+                    season: newSeason,
+                    pageBackgroundId: newDefaultPageBg.id,
+                  });
+                }}
                 className="w-full bg-[#151311] border border-[#3b332b] focus:border-[#c46637] rounded-xl px-3 py-2 text-[#eae2d8] outline-hidden"
               >
                 {SEASONS.map(s => (
@@ -345,45 +441,278 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
             </div>
           </div>
 
+          {/* Rezeptseiten-Hintergrund (5 Motive der Saison + Neutraler Standard) */}
+          <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[#c46637] font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5" />
+                <span>Rezeptseiten-Hintergrund ({recipe.season}):</span>
+              </label>
+              <span className="text-[10px] text-[#baa99b] truncate max-w-[200px]">
+                {(() => {
+                  const activeBg = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
+                  return activeBg.name;
+                })()}
+              </span>
+            </div>
+
+            {/* 5 Seasonal Motif Cards + Neutral */}
+            <div className="grid grid-cols-2 gap-2">
+              {getPageBackgroundsForSeason(recipe.season).map(bg => {
+                const currentActive = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
+                const isSelected = currentActive.id === bg.id;
+
+                return (
+                  <button
+                    key={bg.id}
+                    type="button"
+                    onClick={() => update({ pageBackgroundId: bg.id })}
+                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[#c46637] bg-[#34271f] ring-2 ring-[#c46637]/50 shadow-md'
+                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#524336] hover:bg-[#221d19]'
+                    }`}
+                    title={bg.description}
+                  >
+                    <SeasonalBackgroundThumbnail
+                      pageBackgroundId={bg.id}
+                      season={bg.season}
+                      className="w-8 h-11"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] font-semibold text-[#f5eee6] truncate leading-tight">
+                          {bg.name}
+                        </span>
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-[#c46637] shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[9px] text-[#8e8074] block truncate mt-0.5">
+                        {bg.season === 'Neutral' ? 'Reines Creme #FFF7F0' : bg.description}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* 4 Tags */}
           <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-2.5">
             <div className="flex items-center justify-between">
-              <label className="text-[#c46637] font-semibold uppercase tracking-wider">
-                Exakt 4 Tags (§5):
+              <label className="text-[#c46637] font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <span>Exakt 4 Tags (§5):</span>
+                {selectedTagIndex !== null && (
+                  <span className="text-[10px] text-amber-400 font-normal">
+                    · Tag {selectedTagIndex + 1} aktiv zum Ersetzen
+                  </span>
+                )}
               </label>
-              <span className="text-[10px] text-[#8e8074]">Alle 4 Pflichtfelder</span>
+              {selectedTagIndex !== null ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTagIndex(null)}
+                  className="text-[10px] text-[#baa99b] hover:text-[#f5eee6] hover:underline"
+                >
+                  Auswahl aufheben
+                </button>
+              ) : (
+                <span className="text-[10px] text-[#8e8074]">Klicke einen Tag zum gezielten Ersetzen</span>
+              )}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {recipe.tags.map((tag, idx) => (
-                <div key={idx}>
-                  <input
-                    type="text"
-                    value={tag}
-                    onChange={e => handleTagChange(idx, e.target.value)}
-                    placeholder={`TAG ${idx + 1}`}
-                    className="w-full bg-[#151311] border border-[#3d342c] focus:border-[#c46637] rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold uppercase tracking-wider text-[#f5eee6] outline-hidden"
-                  />
-                </div>
-              ))}
+              {recipe.tags.map((tag, idx) => {
+                const isSelected = selectedTagIndex === idx;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedTagIndex(prev => (prev === idx ? null : idx))}
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer relative ${
+                      isSelected
+                        ? 'bg-[#35251a] border-[#c46637] ring-2 ring-[#c46637]/50 shadow-md'
+                        : 'bg-[#151311] border-[#3d342c] hover:border-[#6b5849]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[9px] mb-1 px-1">
+                      <span
+                        className={`font-semibold uppercase tracking-wider ${
+                          isSelected ? 'text-[#c46637]' : 'text-[#8e8074]'
+                        }`}
+                      >
+                        Tag {idx + 1}
+                      </span>
+                      {isSelected && (
+                        <span className="text-[8.5px] px-1 py-0.2 rounded bg-[#c46637] text-white font-bold tracking-tight">
+                          Aktiv
+                        </span>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={tag}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedTagIndex(idx);
+                      }}
+                      onChange={e => handleTagChange(idx, e.target.value)}
+                      placeholder={`TAG ${idx + 1}`}
+                      className="w-full bg-transparent border-0 focus:outline-hidden text-center text-xs font-semibold uppercase tracking-wider text-[#f5eee6] p-0"
+                    />
+
+                    {/* Subtle seasonal gradient strip */}
+                    <div className="mt-1.5 pt-1 border-t border-white/5 flex items-center">
+                      <span
+                        style={getSeasonTagStyle(recipe.season)}
+                        className="h-1.5 w-full rounded-full shadow-xs"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live Preview of 4 Seasonal Tags */}
+            <div className="bg-[#1a1715] p-2.5 rounded-lg border border-[#2e261f] flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[10px] text-[#8e8074]">
+                Vorschau ({recipe.season}-Farbverlauf von links nach rechts):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {recipe.tags.map((t, idx) => (
+                  <SeasonTag key={idx} tag={t || `TAG ${idx + 1}`} season={recipe.season} />
+                ))}
+              </div>
             </div>
 
             {/* Quick tag chips */}
-            <div>
-              <span className="text-[10px] text-[#8e8074] block mb-1.5">
-                Schnellauswahl gängiger Kochbuch-Tags:
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {COMMON_TAGS.map(t => (
-                  <button
-                    key={t}
-                    onClick={() => handleAddQuickTag(t)}
-                    className="px-2 py-0.5 rounded-md bg-[#1d1917] hover:bg-[#342b23] border border-[#3b322a] text-[10px] text-[#cfc0b2] uppercase tracking-wider transition-colors"
-                  >
-                    + {t}
-                  </button>
-                ))}
+            <div className="pt-2 border-t border-[#312a23]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-[#8e8074]">
+                  {selectedTagIndex !== null ? (
+                    <span className="text-[#e2c7b5]">
+                      Klick auf Tag ersetzt{' '}
+                      <strong className="text-[#c46637]">
+                        Tag {selectedTagIndex + 1} ({recipe.tags[selectedTagIndex] || 'leer'})
+                      </strong>:
+                    </span>
+                  ) : (
+                    'Schnellauswahl gängiger Kochbuch-Tags:'
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetQuickTags}
+                  className="text-[9.5px] text-[#8e8074] hover:text-[#c46637] flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Schnellauswahl auf die 15 Standard-Tags zurücksetzen"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Standard wiederherstellen</span>
+                </button>
               </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {quickTags.map(t => (
+                  <div
+                    key={t}
+                    className={`inline-flex items-center rounded-md border text-[10px] uppercase tracking-wider transition-all overflow-hidden ${
+                      selectedTagIndex !== null
+                        ? 'bg-[#291f18] border-[#543b2a] text-[#f5eee6] hover:border-[#c46637]'
+                        : 'bg-[#1d1917] border-[#3b322a] text-[#cfc0b2] hover:border-[#524438]'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleAddQuickTag(t)}
+                      className="px-2 py-0.5 hover:bg-[#c46637] hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+                      title={
+                        selectedTagIndex !== null
+                          ? `Ersetzt Tag ${selectedTagIndex + 1} („${recipe.tags[selectedTagIndex] || ''}“) durch „${t}“`
+                          : `Tag „${t}“ ins Rezept übernehmen`
+                      }
+                    >
+                      {selectedTagIndex !== null ? `↳ ${t}` : `+ ${t}`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={e => handleDeleteQuickTag(e, t)}
+                      className="px-1.5 py-0.5 text-[#8e8074] hover:text-red-400 hover:bg-red-950/40 border-l border-[#332b23] transition-colors cursor-pointer"
+                      title={`„${t}“ aus der Schnellauswahl entfernen`}
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Inline Add Quick Tag */}
+                {isAddingTag ? (
+                  <div className="inline-flex items-center rounded-md border border-[#c46637] bg-[#221a15] p-0.5 text-[10px] shadow-sm">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newTagInput}
+                      onChange={e => {
+                        setNewTagInput(e.target.value);
+                        if (tagError) setTagError(null);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomQuickTag();
+                        } else if (e.key === 'Escape') {
+                          setIsAddingTag(false);
+                          setNewTagInput('');
+                          setTagError(null);
+                        }
+                      }}
+                      placeholder="TAG NAME..."
+                      maxLength={26}
+                      className="bg-transparent text-[#f5eee6] uppercase text-[10px] px-1.5 py-0.5 outline-hidden w-28 font-medium placeholder-[#786b61]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomQuickTag}
+                      className="p-1 hover:bg-[#c46637] text-[#c46637] hover:text-white rounded-xs transition-colors cursor-pointer"
+                      title="Neuen Tag speichern"
+                    >
+                      <Check className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingTag(false);
+                        setNewTagInput('');
+                        setTagError(null);
+                      }}
+                      className="p-1 hover:bg-stone-800 text-[#8e8074] hover:text-white rounded-xs transition-colors cursor-pointer"
+                      title="Abbrechen"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingTag(true);
+                      setTagError(null);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md border border-dashed border-[#57483c] text-[#c46637] hover:border-[#c46637] hover:bg-[#2b211a] text-[10px] uppercase font-semibold tracking-wider transition-all cursor-pointer"
+                    title="Neuen Tag zur Schnellauswahl hinzufügen"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Tag hinzufügen</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Tag error / warning hint */}
+              {tagError && (
+                <div className="text-[10px] text-amber-400 mt-1.5 pl-1">
+                  Hinweis: {tagError}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -889,8 +1218,39 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
       {/* Tab 6: Food-Foto (1:1 Quadratisch) */}
       {activeTab === 'foto' && (
         <div className="space-y-4 text-xs overflow-y-auto pr-1">
+          {/* AI Generator Banner */}
+          <div className="bg-gradient-to-r from-[#2c1e15] via-[#221812] to-[#181310] p-3.5 rounded-xl border border-[#4a3424] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c46637] to-[#8c3e17] flex items-center justify-center text-white shadow-md shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#f5eee6] uppercase tracking-wider">
+                    KI-Food-Foto Generator
+                  </span>
+                  <span className="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.2 rounded-full bg-[#c46637]/20 border border-[#c46637]/40 text-[#d97d4f]">
+                    Gemini
+                  </span>
+                </div>
+                <span className="text-[10.5px] text-[#baa99b] block leading-tight mt-0.5">
+                  Analysiert Zutaten, Texturen &amp; {recipe.season}-Licht für rezeptgetreue High-End Fotos.
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsImageGeneratorOpen(true)}
+              className="px-4 py-2 rounded-xl bg-[#c46637] hover:bg-[#d6723e] text-white text-xs font-bold tracking-wide flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              KI-Bild generieren
+            </button>
+          </div>
+
           <div className="flex gap-4 items-start">
-            <div className="w-28 h-28 rounded-xl overflow-hidden bg-black/40 border border-[#44382e] shrink-0">
+            <div className="w-28 h-28 rounded-xl overflow-hidden bg-black/40 border border-[#44382e] shrink-0 relative group">
               {recipe.photoUrl ? (
                 <img
                   src={recipe.photoUrl}
@@ -903,11 +1263,21 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
                   Kein Foto
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={() => setIsImageGeneratorOpen(true)}
+                title="KI-Foto für dieses Gericht generieren"
+                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-semibold gap-1 transition-opacity cursor-pointer p-1 text-center"
+              >
+                <Sparkles className="w-4 h-4 text-[#d97d4f]" />
+                Foto neu generieren
+              </button>
             </div>
 
             <div className="space-y-1.5 flex-1">
               <span className="font-bold text-[#f5eee6] block text-xs">
-                Food-Foto Richtlinien (§13 & §14):
+                Food-Foto Richtlinien (§13 &amp; §14):
               </span>
               <ul className="text-[10.5px] text-[#9e8f83] space-y-0.5 list-disc list-inside">
                 <li>Exakt 1:1 quadratisches Format</li>
@@ -918,105 +1288,62 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
             </div>
           </div>
 
-          {/* Custom-Hintergrund & Kulisse */}
+          {/* Rezeptseiten-Hintergrund der gesamten A4-Seite */}
           <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-bold text-[#c46637] uppercase tracking-wider text-xs flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5" />
-                Saisonaler Custom-Hintergrund & Kulisse:
+                Rezeptseiten-Hintergrund ({recipe.season}):
               </span>
-
-              {onOpenBackgroundManager && (
-                <button
-                  type="button"
-                  onClick={onOpenBackgroundManager}
-                  className="text-[10.5px] text-[#cfc0b2] hover:text-[#f5eee6] hover:underline flex items-center gap-1"
-                >
-                  <Palette className="w-3 h-3 text-[#c46637]" />
-                  Verwalten...
-                </button>
-              )}
+              <span className="text-[10px] text-[#baa99b] truncate max-w-[200px]">
+                {(() => {
+                  const activeBg = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
+                  return activeBg.name;
+                })()}
+              </span>
             </div>
 
             <p className="text-[10.5px] text-[#9c8e82]">
-              Wähle einen definierten Kulissen-Hintergrund, der zur Jahreszeit <strong>{recipe.season}</strong> passt, oder nutze den neutralen Standard.
+              Wähle ein dezentes saisonales Motiv für die gesamte A4-Rezeptseite. Auf dem warmen Cremegrund (#FFF7F0) mit botanischen Akzenten an den Rändern und Ecken.
             </p>
 
-            {/* Quick Background Cards */}
+            {/* Quick Background Cards (Filtered by current season) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {backgrounds.map(bg => {
-                const isSelected =
-                  recipe.customBackgroundId === bg.id ||
-                  (!recipe.customBackgroundId && bg.isNeutralDefault);
+              {getPageBackgroundsForSeason(recipe.season).map(bg => {
+                const currentActive = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
+                const isSelected = currentActive.id === bg.id;
 
                 return (
                   <button
                     key={bg.id}
                     type="button"
-                    onClick={() => update({ customBackgroundId: bg.id })}
-                    className={`p-2 rounded-lg border text-left flex items-center gap-2.5 transition-colors ${
+                    onClick={() => update({ pageBackgroundId: bg.id })}
+                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-[#c46637] bg-[#32261e]'
-                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#4d3e33]'
+                        ? 'border-[#c46637] bg-[#34271f] ring-2 ring-[#c46637]/50 shadow-md'
+                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#524336] hover:bg-[#221d19]'
                     }`}
                   >
-                    <div
-                      className="w-8 h-8 rounded-md shrink-0 border shadow-inner overflow-hidden relative"
-                      style={{
-                        background: bg.previewGradient || bg.previewColor,
-                        borderColor: bg.previewBorderColor || '#D5C4B4',
-                      }}
-                    >
-                      {bg.previewImageUrl && (
-                        <img
-                          src={bg.previewImageUrl}
-                          alt={bg.name}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
+                    <SeasonalBackgroundThumbnail
+                      pageBackgroundId={bg.id}
+                      season={bg.season}
+                      className="w-9 h-12"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-[11px] font-semibold text-[#f5eee6] truncate">
                           {bg.name}
                         </span>
-                        {isSelected && <Check className="w-3 h-3 text-[#c46637] shrink-0" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#c46637] shrink-0" />}
                       </div>
-                      <span className="text-[9.5px] text-[#8e8074] block truncate">
-                        {bg.mood}
+                      <span className="text-[9px] text-[#8e8074] block truncate mt-0.5">
+                        {bg.season === 'Neutral' ? 'Reines Creme #FFF7F0' : bg.description}
                       </span>
                     </div>
                   </button>
                 );
               })}
             </div>
-
-            {/* Active Background info */}
-            {(() => {
-              const activeBg =
-                backgrounds.find(b => b.id === recipe.customBackgroundId) ||
-                backgrounds.find(b => b.isNeutralDefault);
-              if (!activeBg) return null;
-              return (
-                <div className="bg-[#1a1715] p-2.5 rounded-lg border border-[#312a23] text-[10.5px] text-[#b5a597] space-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#f5eee6]">
-                      Aktive Kulisse: {activeBg.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => update({ customBackgroundId: undefined })}
-                      className="text-[10px] text-[#8e8074] hover:text-[#f5eee6] underline"
-                    >
-                      Auf Standard zurücksetzen
-                    </button>
-                  </div>
-                  <p className="italic text-[10px] text-[#918377]">
-                    „{activeBg.backdropPrompt}“
-                  </p>
-                </div>
-              );
-            })()}
           </div>
 
           <div>
@@ -1061,6 +1388,16 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Intelligent AI Recipe Image Generator Modal */}
+      <RecipeImageGeneratorModal
+        isOpen={isImageGeneratorOpen}
+        onClose={() => setIsImageGeneratorOpen(false)}
+        recipe={recipe}
+        backgrounds={backgrounds}
+        categories={categories}
+        onApplyImage={(newPhotoUrl) => update({ photoUrl: newPhotoUrl })}
+      />
     </div>
   );
 };

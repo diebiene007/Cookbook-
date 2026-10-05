@@ -2,6 +2,8 @@ import React from 'react';
 import { RecipePageData } from '../types/recipe';
 import { CustomBackground } from '../types/backgrounds';
 import { Clock, Users, UtensilsCrossed, AlertCircle, Sparkles } from 'lucide-react';
+import { getSeasonTagStyle } from '../utils/seasonTagTheme';
+import { SeasonalBackgroundLayer } from './SeasonalBackgroundLayer';
 
 interface MasterRecipePageProps {
   recipe: RecipePageData;
@@ -89,9 +91,14 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
       }}
     >
       {/* ────────────────────────────────────────────────────────
+          SEASONAL EDITORIAL BACKGROUND LAYER (Subtle watermark motif)
+          ──────────────────────────────────────────────────────── */}
+      <SeasonalBackgroundLayer pageBackgroundId={recipe.pageBackgroundId} season={season} />
+
+      {/* ────────────────────────────────────────────────────────
           1. HEADER BLOCK: [Jahreszeit] · [Kategorie], TITEL, 4 TAGS
           ──────────────────────────────────────────────────────── */}
-      <header className={`mb-3.5 ${highlightBoxes ? 'ring-1 ring-amber-400/40' : ''}`}>
+      <header className={`relative z-10 mb-3.5 ${highlightBoxes ? 'ring-1 ring-amber-400/40' : ''}`}>
         {/* Season & Category */}
         <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#876F61] mb-1">
           <span>{season.toUpperCase()}</span>
@@ -106,12 +113,13 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
           {title}
         </h1>
 
-        {/* 4 Tags */}
+        {/* 4 Tags with individual seasonal left-to-right gradient */}
         <div className="flex items-center gap-2">
           {tags.map((tag, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider text-[#694F3E] bg-[#F7ECE1] border border-[#E8DACD]"
+              style={getSeasonTagStyle(season)}
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border"
             >
               {tag}
             </span>
@@ -122,7 +130,7 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
       {/* ────────────────────────────────────────────────────────
           2. UPPER HERO GRID: FOTO (1:1), AUF EINEN BLICK, NÄHRWERTE, ACHTE AUF
           ──────────────────────────────────────────────────────── */}
-      <section className={`grid grid-cols-12 gap-3.5 mb-3.5 ${highlightBoxes ? 'ring-1 ring-blue-400/40' : ''}`}>
+      <section className={`relative z-10 grid grid-cols-12 gap-3.5 mb-3.5 ${highlightBoxes ? 'ring-1 ring-blue-400/40' : ''}`}>
         {/* Left: Square 1:1 Photo Frame */}
         <div className="col-span-5 flex flex-col justify-center items-center">
           <div
@@ -242,7 +250,7 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
           3. ZUTATEN: 2 BALANCIERTE SPALTEN MIT LOGISCHEN GRUPPEN
           ──────────────────────────────────────────────────────── */}
       <section
-        className={`bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3 mb-3.5 ${
+        className={`relative z-10 bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3 mb-3.5 ${
           highlightBoxes ? 'ring-1 ring-green-400/40' : ''
         }`}
       >
@@ -318,7 +326,7 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
           4. ZUBEREITUNG: 2-SPALTIGES GRID MIT SCHRITT-KARTEN (6, 8, 10, 12)
           ──────────────────────────────────────────────────────── */}
       <section
-        className={`bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3 flex-1 flex flex-col justify-between mb-3 ${
+        className={`relative z-10 bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3 flex-1 flex flex-col justify-between mb-3 ${
           highlightBoxes ? 'ring-1 ring-purple-400/40' : ''
         }`}
       >
@@ -364,7 +372,7 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
           5. FOOTER: QUELLE & „REZEPTE DURCHS JAHR“
           ──────────────────────────────────────────────────────── */}
       <footer
-        className={`border-t border-[#E8DACD] pt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-[#8C7A6D] ${
+        className={`relative z-10 border-t border-[#E8DACD] pt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-[#8C7A6D] ${
           highlightBoxes ? 'ring-1 ring-emerald-400/40' : ''
         }`}
       >

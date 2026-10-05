@@ -407,23 +407,17 @@ export const BackgroundManagerModal: React.FC<BackgroundManagerModalProps> = ({
                     {/* Header swatch & title */}
                     <div className="flex items-start gap-3 mb-2.5">
                       <div
-                        className="w-12 h-12 rounded-xl shrink-0 shadow-inner border flex items-center justify-center overflow-hidden relative"
+                        className="w-12 h-12 rounded-xl shrink-0 shadow-inner border flex items-center justify-center"
                         style={{
                           background: bg.previewGradient || bg.previewColor,
                           borderColor: bg.previewBorderColor || '#D5C4B4',
                         }}
                       >
-                        {bg.previewImageUrl ? (
-                          <img
-                            src={bg.previewImageUrl}
-                            alt={bg.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : bg.isNeutralDefault ? (
+                        {bg.isNeutralDefault && (
                           <span className="text-[9px] font-bold uppercase text-[#735848]">
                             Basis
                           </span>
-                        ) : null}
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">

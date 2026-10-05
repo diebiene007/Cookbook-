@@ -56,7 +56,8 @@ export interface RecipePageData {
   tags: [string, string, string, string]; // Exakt 4 Tags in GROSSBUCHSTABEN
   photoUrl: string;
   photoAlt?: string;
-  customBackgroundId?: string; // Saisonspezifischer oder neutraler Custom-Hintergrund
+  pageBackgroundId?: string; // Saisonaler A4-Rezeptseiten-Hintergrund (5 Motive je Saison + Neutral)
+  customBackgroundId?: string; // Optionaler Food-Foto Backdrop Stilmuster
   quickFacts: QuickFacts;
   columnLeft: IngredientColumn;
   columnRight: IngredientColumn;

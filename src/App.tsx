@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RecipePageData, Season, Category } from './types/recipe';
 import { BackgroundCategory, CustomBackground } from './types/backgrounds';
 import { DEFAULT_RECIPES } from './data/defaultRecipes';
-import { DEFAULT_BACKGROUND_CATEGORIES, DEFAULT_BACKGROUNDS } from './data/defaultBackgrounds';
+import { DEFAULT_BACKGROUND_CATEGORIES, DEFAULT_BACKGROUNDS, getDefaultBackgroundForSeason } from './data/defaultBackgrounds';
+import { getPageBackgroundById, getDefaultPageBackgroundForSeason } from './data/recipePageBackgrounds';
 import { runQualityAudit } from './utils/qualityCheck';
 import { MasterRecipePage } from './components/MasterRecipePage';
 import { DetailEditor } from './components/DetailEditor';
@@ -116,10 +117,25 @@ export default function App() {
   const currentRecipe =
     recipes.find(r => r.id === currentRecipeId) || recipes[0] || DEFAULT_RECIPES[0];
 
-  const activeBackground =
-    backgrounds.find(b => b.id === currentRecipe.customBackgroundId) ||
-    backgrounds.find(b => b.isNeutralDefault) ||
-    DEFAULT_BACKGROUNDS[0];
+  const activePageBackground = getPageBackgroundById(
+    currentRecipe.pageBackgroundId,
+    currentRecipe.season
+  );
+
+  const activeBackground = (() => {
+    if (currentRecipe.customBackgroundId) {
+      const match = backgrounds.find(b => b.id === currentRecipe.customBackgroundId);
+      // Valid if it matches the current recipe's season OR is neutral standard
+      if (match && (match.season === currentRecipe.season || match.isNeutralDefault)) {
+        return match;
+      }
+    }
+    // Fallback: Default motif for the current season
+    return (
+      backgrounds.find(b => b.season === currentRecipe.season && b.isSeasonalDefault) ||
+      getDefaultBackgroundForSeason(currentRecipe.season)
+    );
+  })();
 
   const qualityReport = runQualityAudit(currentRecipe);
 
@@ -192,6 +208,7 @@ export default function App() {
       category: 'Hauptgerichte',
       tags: ['SCHNELL', 'MEAL PREP', 'HIGH PROTEIN', 'HERZHAFT'],
       photoUrl: DEFAULT_RECIPES[0].photoUrl,
+      pageBackgroundId: getDefaultPageBackgroundForSeason('Frühling').id,
       quickFacts: {
         portions: '2 Portionen',
         activeTimeMin: 15,
@@ -388,7 +405,7 @@ export default function App() {
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
-        activeBackgroundName={activeBackground?.name}
+        activeBackgroundName={activePageBackground.name}
       />
 
       {/* ────────────────────────────────────────────────────────

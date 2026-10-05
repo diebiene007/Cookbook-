@@ -313,6 +313,317 @@ VERBINDLICHE REGELN:
   }
 });
 
+// API endpoint to analyze recipe visuals semantically according to editorial guidelines
+app.post('/api/analyze-recipe-visuals', async (req, res) => {
+  const {
+    title,
+    season = 'Zeitlos',
+    category = 'Hauptgerichte',
+    tags = [],
+    columnLeft,
+    columnRight,
+    steps = [],
+    backgroundName,
+    backgroundPrompt,
+    additionalInstructions,
+    isVariant = false,
+  } = req.body;
+
+  // Flatten ingredients
+  const allIngredients: string[] = [];
+  if (columnLeft?.groups) {
+    for (const g of columnLeft.groups) {
+      for (const item of g.items || []) {
+        if (item.name) allIngredients.push(`${item.amount ? item.amount + ' ' : ''}${item.name}`);
+      }
+    }
+  }
+  if (columnRight?.groups) {
+    for (const g of columnRight.groups) {
+      for (const item of g.items || []) {
+        if (item.name) allIngredients.push(`${item.amount ? item.amount + ' ' : ''}${item.name}`);
+      }
+    }
+  }
+
+  const stepsText = (steps || [])
+    .map((s: any, idx: number) => `${idx + 1}. ${s.title || ''}: ${s.text || ''}`)
+    .join('\n');
+
+  if (!aiClient) {
+    return res.json({
+      analysis: {
+        dishName: title || 'Kulinarisches Gericht',
+        visualSummary: `Appetitlich angerichtetes Gericht „${title}“ mit sichtbaren Zutaten: ${allIngredients.slice(0, 5).join(', ')}.`,
+        visibleIngredients: allIngredients.slice(0, 6),
+        transformedTextures: 'Gegarte und harmonisch abgeschmeckte Komponenten mit natürlichem Glanz.',
+        chosenPerspective: category.includes('Bowls') || category.includes('Salate') ? 'overhead' : '45-degree',
+        tablewareAndProps: 'Handgefertigter matter Keramikteller in warmer Naturton-Färbung.',
+        lightingAndMood: `${season}-Lichtstimmung mit sanftem, natürlichem Tageslichteinfall.`,
+        finalPhotoPrompt: `High-end editorial cookbook food photography of ${title}, prepared with ${allIngredients.slice(0, 5).join(', ')}. Warm natural daylight, organic tableware, appetizing textures, minimalist styling, overhead 45 degree angle. Strictly square 1:1 composition, absolutely no text, no words, no watermarks.`,
+      },
+      note: 'Lokaler Regel-Modus (kein GEMINI_API_KEY konfiguriert)',
+    });
+  }
+
+  try {
+    const analysisPrompt = `Du bist die leitende Food-Stylistin und Culinary-Art-Direktorin für ein deutsches High-End-Kochbuch („Rezepte durchs Jahr“).
+Analysiere das folgende Rezept semantisch bis ins kleinste Detail, um die visuelle Darstellung des fertigen Gerichts exakt zu planen.
+
+--- REZEPT ---
+Titel: ${title || 'Gericht'}
+Jahreszeit (§4): ${season}
+Kategorie (§4): ${category}
+Tags: ${Array.isArray(tags) ? tags.join(', ') : ''}
+Zutaten & Mengen:
+${allIngredients.length > 0 ? allIngredients.join('\n') : 'Keine spezifischen Zutaten angegeben.'}
+
+Zubereitungsschritte:
+${stepsText || 'Keine spezifischen Schritte angegeben.'}
+
+Kulissen-Hintergrund:
+${backgroundName ? `${backgroundName}: ${backgroundPrompt || ''}` : 'Neutraler dezenter Studiountergrund'}
+
+Zusätzliche Bildanweisung des Nutzers:
+${additionalInstructions || 'Keine'}
+
+${isVariant ? 'HINWEIS FÜR VARIANTE: Behalte exakt dasselbe Gericht und dieselben Zutaten bei 100%iger Rezepttreue bei, variiere aber subtil Kamerawinkel, Anordnung der Komponenten, Geschirr oder Lichtwinkel.' : ''}
+--- ENDE REZEPT ---
+
+STRIKTE EDITORIAL-REGELN:
+1. REZEPTTREUE & ANTI-HALLUZINATION:
+   - Erfinde KEINE Zutaten (keine zufälligen Saucen, Früchte, Kräuter, Nüsse, Käse, Fleisch oder Beilagen, die nicht im Rezept stehen).
+   - Analysiere, was nach der Zubereitung TATSÄCHLICH sichtbar ist. (Beispiel: Pürierte Erdbeeren ergeben ein Sorbet/Sauce, keine frischen ganzen Erdbeeren als Hauptbestandteil!).
+2. JAHRESZEIT & LICHT (§3):
+   - Frühling: Helles, frisches Tageslicht, zarte Frische, leichte Materialien.
+   - Sommer: Helles, warmes Sonnenlicht, lebendig, leichte mediterrane oder Sommer-Anmutung.
+   - Herbst: Warmes, weiches Licht, Holz- und Erdtöne, gemütlich, gedeckte warme Farben.
+   - Winter: Gemütliches, kontrastreicheres, wärmeres Licht, dunklere/tiefere Materialien.
+   - Zeitlos: Neutrales, hochkarätiges weiches Tageslicht, neutrale Töne.
+   - Das Essen bleibt immer zu 100% der visuelle Hauptfokus!
+3. PERSPEKTIVE:
+   - Wähle intelligent die beste Perspektive:
+     - "overhead" für Bowls, Salate, Pizzen, Blechkuchen, flache Teller.
+     - "45-degree" für die meisten klassischen Hauptgerichte, Pasta, Fleisch-/Fischgerichte.
+     - "low-angle" für Burger, geschichtete Desserts, hohe Kuchen.
+     - "close-up" für ausgeprägte Knusper- oder Saftigkeitstexturen.
+4. FOTOGRAFISCHER GRUNDSTIL:
+   - Premium Editorial Food Photography.
+   - Natürlich appetitliche Texturen, realistische Schatten, weiche Tiefenschärfe.
+   - KEIN Plastik-Look, kein unnatürliches HDR, kein künstlicher Glanz.
+   - STRIKT VERBOTEN: Buchstaben, Schrift, Zahlen, Wasserzeichen, Logos. Format: 1:1 Quadrat.`;
+
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: analysisPrompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            dishName: { type: Type.STRING },
+            visualSummary: { type: Type.STRING, description: '2-3 präzise deutsche Sätze zum fertigen Anrichtebild' },
+            visibleIngredients: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: 'Nur tatsächlich nach dem Kochen sichtbare Zutaten',
+            },
+            transformedTextures: { type: Type.STRING, description: 'Texturveränderungen durch Garen, Braten, Backen, Mixen' },
+            chosenPerspective: { type: Type.STRING, description: 'overhead | 45-degree | low-angle | close-up' },
+            tablewareAndProps: { type: Type.STRING, description: 'Passendes Geschirr und Besteck' },
+            lightingAndMood: { type: Type.STRING, description: 'Saisonale Lichtstimmung und Atmosphäre' },
+            finalPhotoPrompt: {
+              type: Type.STRING,
+              description: 'Ausführlicher, hochauflösender englischer Image-Prompt für Gemini/Imagen (Editorial Food Photography, 1:1, photorealistic, no text, no watermarks)',
+            },
+          },
+          required: [
+            'dishName', 'visualSummary', 'visibleIngredients',
+            'transformedTextures', 'chosenPerspective',
+            'tablewareAndProps', 'lightingAndMood', 'finalPhotoPrompt'
+          ],
+        },
+      },
+    });
+
+    const analysis = JSON.parse(response.text || '{}');
+    return res.json({ analysis, success: true });
+  } catch (err: any) {
+    console.error('Error in /api/analyze-recipe-visuals:', err);
+    return res.status(500).json({ error: err.message || 'Fehler bei der Rezeptanalyse' });
+  }
+});
+
+// API endpoint to generate recipe food photo via Gemini Image Generation
+app.post('/api/generate-recipe-image', async (req, res) => {
+  const {
+    title,
+    season = 'Zeitlos',
+    category = 'Hauptgerichte',
+    tags = [],
+    columnLeft,
+    columnRight,
+    steps = [],
+    backgroundName,
+    backgroundPrompt,
+    additionalInstructions,
+    isVariant = false,
+  } = req.body;
+
+  if (!aiClient) {
+    return res.status(400).json({
+      error: 'Kein GEMINI_API_KEY konfiguriert. Bitte konfiguriere den Gemini API Key in den Projekteinstellungen.',
+    });
+  }
+
+  // 1. Flatten ingredients
+  const allIngredients: string[] = [];
+  if (columnLeft?.groups) {
+    for (const g of columnLeft.groups) {
+      for (const item of g.items || []) {
+        if (item.name) allIngredients.push(`${item.amount ? item.amount + ' ' : ''}${item.name}`);
+      }
+    }
+  }
+  if (columnRight?.groups) {
+    for (const g of columnRight.groups) {
+      for (const item of g.items || []) {
+        if (item.name) allIngredients.push(`${item.amount ? item.amount + ' ' : ''}${item.name}`);
+      }
+    }
+  }
+
+  const stepsText = (steps || [])
+    .map((s: any, idx: number) => `${idx + 1}. ${s.title || ''}: ${s.text || ''}`)
+    .join('\n');
+
+  try {
+    // Phase 1: Semantic Recipe Visual Analysis & Prompt Formulation via Gemini 3.8 Flash
+    const analysisPrompt = `Du bist die Chef-Food-Stylistin für ein preisgekröntes deutsches Editorial-Kochbuch.
+Erstelle aus dem folgenden Rezept einen fotorealistischen, hochpräzisen Image-Prompt für die Bildgenerierung.
+
+Rezept:
+Titel: ${title || 'Gericht'}
+Jahreszeit: ${season}
+Kategorie: ${category}
+Tags: ${Array.isArray(tags) ? tags.join(', ') : ''}
+Zutaten: ${allIngredients.join(', ')}
+Schritte: ${stepsText}
+Kulisse / Untergrund: ${backgroundName ? `${backgroundName} (${backgroundPrompt || ''})` : 'Neutraler feiner Studio-Untergrund'}
+Zusatzwunsch des Nutzers: ${additionalInstructions || 'Keiner'}
+${isVariant ? 'VARIANTE: Behalte dasselbe Gericht und dieselben Zutaten 100% rezeptgetreu bei, aber variiere Blickwinkel, Plazierung der Komponenten und feine Schattensetzungen.' : ''}
+
+REGELN:
+- Strikte Rezepttreue: Keine erfundenen Zutaten (keine zufälligen Früchte, Saucen, Kräuter, Fleisch, wenn sie nicht im Rezept stehen).
+- Pürierte oder geschmolzene Zutaten in ihrer finalen gegarten Form darstellen.
+- Das fertige Gericht steht im absoluten Mittelpunkt.
+- Hochwertige Editorial-Food-Fotografie mit natürlichen Texturen und weichem Tageslicht.
+- Keine Buchstaben, Wörter, Schriften oder Wasserzeichen im Bild.`;
+
+    const analysisResponse = await aiClient.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: analysisPrompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            dishName: { type: Type.STRING },
+            visualSummary: { type: Type.STRING },
+            visibleIngredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+            chosenPerspective: { type: Type.STRING },
+            lightingAndMood: { type: Type.STRING },
+            finalPhotoPrompt: {
+              type: Type.STRING,
+              description: 'Detailreicher englischer Bildprompt für High-End Food Photography, 1:1, photorealistic, zero text, zero watermark',
+            },
+          },
+          required: ['dishName', 'visualSummary', 'visibleIngredients', 'chosenPerspective', 'lightingAndMood', 'finalPhotoPrompt'],
+        },
+      },
+    });
+
+    const analysis = JSON.parse(analysisResponse.text || '{}');
+    const finalPrompt = analysis.finalPhotoPrompt;
+
+    // Phase 2: Image Generation via Gemini Image Model
+    // Per instructions, use gemini-3.1-flash-image for high quality food photography with fallback to gemini-3.1-flash-lite-image
+    let imageBase64: string | null = null;
+    let mimeType = 'image/png';
+    let modelUsed = 'gemini-3.1-flash-image';
+
+    try {
+      const imageResult = await aiClient.models.generateContent({
+        model: 'gemini-3.1-flash-image',
+        contents: {
+          parts: [{ text: finalPrompt }],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: '1:1',
+            imageSize: '1K',
+          },
+        },
+      });
+
+      if (imageResult.candidates?.[0]?.content?.parts) {
+        for (const part of imageResult.candidates[0].content.parts) {
+          if (part.inlineData?.data) {
+            imageBase64 = part.inlineData.data;
+            mimeType = part.inlineData.mimeType || 'image/png';
+            break;
+          }
+        }
+      }
+    } catch (primaryModelErr: any) {
+      console.warn('gemini-3.1-flash-image encountered issue, attempting fallback to gemini-3.1-flash-lite-image:', primaryModelErr.message);
+      modelUsed = 'gemini-3.1-flash-lite-image';
+
+      const fallbackResult = await aiClient.models.generateContent({
+        model: 'gemini-3.1-flash-lite-image',
+        contents: {
+          parts: [{ text: finalPrompt }],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: '1:1',
+          },
+        },
+      });
+
+      if (fallbackResult.candidates?.[0]?.content?.parts) {
+        for (const part of fallbackResult.candidates[0].content.parts) {
+          if (part.inlineData?.data) {
+            imageBase64 = part.inlineData.data;
+            mimeType = part.inlineData.mimeType || 'image/png';
+            break;
+          }
+        }
+      }
+    }
+
+    if (!imageBase64) {
+      throw new Error('Kein Bildteil in der Modellantwort gefunden.');
+    }
+
+    const imageUrl = `data:${mimeType};base64,${imageBase64}`;
+
+    return res.json({
+      success: true,
+      imageUrl,
+      analysis,
+      prompt: finalPrompt,
+      modelUsed,
+      isVariant,
+    });
+  } catch (err: any) {
+    console.error('Error in /api/generate-recipe-image:', err);
+    return res.status(500).json({
+      error: err.message || 'Fehler bei der Bildgenerierung.',
+    });
+  }
+});
+
 // API endpoint to generate prompt for food photo or generate image
 app.post('/api/generate-photo-prompt', (req, res) => {
   const { title, ingredients } = req.body;
