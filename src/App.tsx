@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RecipePageData, Season, Category } from './types/recipe';
+import { BackgroundCategory, CustomBackground } from './types/backgrounds';
 import { DEFAULT_RECIPES } from './data/defaultRecipes';
+import { DEFAULT_BACKGROUND_CATEGORIES, DEFAULT_BACKGROUNDS } from './data/defaultBackgrounds';
 import { runQualityAudit } from './utils/qualityCheck';
 import { MasterRecipePage } from './components/MasterRecipePage';
 import { DetailEditor } from './components/DetailEditor';
 import { AssistantInputModal } from './components/AssistantInputModal';
 import { QualityAuditDrawer } from './components/QualityAuditDrawer';
+import { BackgroundManagerModal } from './components/BackgroundManagerModal';
+import { SeasonalPreviewLibrary } from './components/SeasonalPreviewLibrary';
 import { ViewControls } from './components/ViewControls';
 import {
   BookOpen,
@@ -23,9 +27,12 @@ import {
   Sliders,
   ShieldCheck,
   FileText,
+  Palette,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'rezepte_durchs_jahr_data_v1';
+const BG_STORAGE_KEY = 'rezepte_durchs_jahr_backgrounds_v1';
+const CAT_STORAGE_KEY = 'rezepte_durchs_jahr_categories_v1';
 
 export default function App() {
   const [recipes, setRecipes] = useState<RecipePageData[]>(() => {
@@ -41,6 +48,32 @@ export default function App() {
     return DEFAULT_RECIPES;
   });
 
+  const [backgroundCategories, setBackgroundCategories] = useState<BackgroundCategory[]>(() => {
+    try {
+      const stored = localStorage.getItem(CAT_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load categories', e);
+    }
+    return DEFAULT_BACKGROUND_CATEGORIES;
+  });
+
+  const [backgrounds, setBackgrounds] = useState<CustomBackground[]>(() => {
+    try {
+      const stored = localStorage.getItem(BG_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load backgrounds', e);
+    }
+    return DEFAULT_BACKGROUNDS;
+  });
+
   const [currentRecipeId, setCurrentRecipeId] = useState<string>(
     DEFAULT_RECIPES[0].id
   );
@@ -50,8 +83,8 @@ export default function App() {
   const [highlightBoxes, setHighlightBoxes] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
   const [isQualityDrawerOpen, setIsQualityDrawerOpen] = useState<boolean>(false);
+  const [isBackgroundManagerOpen, setIsBackgroundManagerOpen] = useState<boolean>(false);
   const [sidebarTab, setSidebarTab] = useState<'editor' | 'library' | 'rules'>('editor');
-  const [selectedSeasonFilter, setSelectedSeasonFilter] = useState<string>('Alle');
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -64,10 +97,56 @@ export default function App() {
     }
   }, [recipes]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(BG_STORAGE_KEY, JSON.stringify(backgrounds));
+    } catch (e) {
+      console.error('Failed to save backgrounds to localStorage', e);
+    }
+  }, [backgrounds]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(backgroundCategories));
+    } catch (e) {
+      console.error('Failed to save categories to localStorage', e);
+    }
+  }, [backgroundCategories]);
+
   const currentRecipe =
     recipes.find(r => r.id === currentRecipeId) || recipes[0] || DEFAULT_RECIPES[0];
 
+  const activeBackground =
+    backgrounds.find(b => b.id === currentRecipe.customBackgroundId) ||
+    backgrounds.find(b => b.isNeutralDefault) ||
+    DEFAULT_BACKGROUNDS[0];
+
   const qualityReport = runQualityAudit(currentRecipe);
+
+  const handleAddCategory = (newCat: BackgroundCategory) => {
+    setBackgroundCategories(prev => [...prev, newCat]);
+  };
+
+  const handleAddBackground = (newBg: CustomBackground) => {
+    setBackgrounds(prev => [...prev, newBg]);
+  };
+
+  const handleDeleteBackground = (bgId: string) => {
+    setBackgrounds(prev => prev.filter(b => b.id !== bgId));
+    if (currentRecipe.customBackgroundId === bgId) {
+      handleUpdateCurrentRecipe({ ...currentRecipe, customBackgroundId: undefined });
+    }
+  };
+
+  const handleSelectBackground = (bgId: string) => {
+    handleUpdateCurrentRecipe({ ...currentRecipe, customBackgroundId: bgId });
+  };
+
+  const handleApplyBackgroundToSeason = (season: Season, backgroundId: string) => {
+    setRecipes(prev =>
+      prev.map(r => (r.season === season ? { ...r, customBackgroundId: backgroundId } : r))
+    );
+  };
 
   // Handle auto-fit scale calculation
   useEffect(() => {
@@ -224,11 +303,6 @@ export default function App() {
     input.click();
   };
 
-  const filteredLibrary = recipes.filter(r => {
-    if (selectedSeasonFilter === 'Alle') return true;
-    return r.season === selectedSeasonFilter;
-  });
-
   return (
     <div className="min-h-screen bg-[#141210] text-[#eae2d8] flex flex-col font-sans select-none antialiased">
       {/* ────────────────────────────────────────────────────────
@@ -313,6 +387,8 @@ export default function App() {
         onOpenAssistantModal={() => setIsAssistantOpen(true)}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
+        onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
+        activeBackgroundName={activeBackground?.name}
       />
 
       {/* ────────────────────────────────────────────────────────
@@ -366,71 +442,22 @@ export default function App() {
               <DetailEditor
                 recipe={currentRecipe}
                 onChange={handleUpdateCurrentRecipe}
+                backgrounds={backgrounds}
+                categories={backgroundCategories}
+                onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
               />
             )}
 
             {sidebarTab === 'library' && (
-              <div className="space-y-3 text-xs">
-                {/* Season Filter chips */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {['Alle', 'Frühling', 'Sommer', 'Herbst', 'Winter', 'Zeitlos'].map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSelectedSeasonFilter(s)}
-                      className={`px-2 py-1 rounded-lg text-[10.5px] font-semibold uppercase tracking-wider shrink-0 transition-colors ${
-                        selectedSeasonFilter === s
-                          ? 'bg-[#c46637] text-white'
-                          : 'bg-[#211d1a] text-[#8e8074] hover:text-[#f5eee6]'
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Recipe list cards */}
-                <div className="space-y-2">
-                  {filteredLibrary.map(r => (
-                    <div
-                      key={r.id}
-                      onClick={() => setCurrentRecipeId(r.id)}
-                      className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                        r.id === currentRecipe.id
-                          ? 'bg-[#2d251e] border-[#c46637] shadow-md'
-                          : 'bg-[#1e1b18] border-[#342b23] hover:border-[#4d3f33]'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <span className="font-editorial-serif font-bold uppercase text-sm text-[#f5eee6] truncate">
-                          {r.title}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#171412] text-[#c46637] font-semibold uppercase shrink-0">
-                          {r.masterVariant}er Vorlage
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] text-[#9c8e82] flex items-center gap-1.5 mb-1.5">
-                        <span className="font-semibold text-[#cfc0b2]">{r.season}</span>
-                        <span>·</span>
-                        <span>{r.category}</span>
-                        <span>·</span>
-                        <span>{r.quickFacts.totalTimeMin} Min</span>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1">
-                        {r.tags.map((t, idx) => (
-                          <span
-                            key={idx}
-                            className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#171412] text-[#8c7e73]"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SeasonalPreviewLibrary
+                recipes={recipes}
+                currentRecipeId={currentRecipe.id}
+                onSelectRecipe={id => setCurrentRecipeId(id)}
+                backgrounds={backgrounds}
+                backgroundCategories={backgroundCategories}
+                onApplyBackgroundToSeason={handleApplyBackgroundToSeason}
+                onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
+              />
             )}
 
             {sidebarTab === 'rules' && (
@@ -500,6 +527,7 @@ export default function App() {
                     recipe={currentRecipe}
                     scale={scale}
                     highlightBoxes={highlightBoxes}
+                    background={activeBackground}
                   />
                 </div>
 
@@ -520,6 +548,7 @@ export default function App() {
                   recipe={currentRecipe}
                   scale={scale}
                   highlightBoxes={highlightBoxes}
+                  background={activeBackground}
                 />
               </div>
 
@@ -548,6 +577,18 @@ export default function App() {
         report={qualityReport}
         currentRecipe={currentRecipe}
         onUpdateRecipe={handleUpdateCurrentRecipe}
+      />
+
+      <BackgroundManagerModal
+        isOpen={isBackgroundManagerOpen}
+        onClose={() => setIsBackgroundManagerOpen(false)}
+        categories={backgroundCategories}
+        backgrounds={backgrounds}
+        currentBackgroundId={currentRecipe.customBackgroundId}
+        onSelectBackground={handleSelectBackground}
+        onAddCategory={handleAddCategory}
+        onAddBackground={handleAddBackground}
+        onDeleteBackground={handleDeleteBackground}
       />
     </div>
   );

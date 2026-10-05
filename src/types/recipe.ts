@@ -56,6 +56,7 @@ export interface RecipePageData {
   tags: [string, string, string, string]; // Exakt 4 Tags in GROSSBUCHSTABEN
   photoUrl: string;
   photoAlt?: string;
+  customBackgroundId?: string; // Saisonspezifischer oder neutraler Custom-Hintergrund
   quickFacts: QuickFacts;
   columnLeft: IngredientColumn;
   columnRight: IngredientColumn;

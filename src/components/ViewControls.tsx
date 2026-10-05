@@ -12,6 +12,7 @@ import {
   Download,
   Upload,
   Layers,
+  Palette,
 } from 'lucide-react';
 import { QualityReport } from '../types/recipe';
 
@@ -27,6 +28,8 @@ interface ViewControlsProps {
   onOpenAssistantModal: () => void;
   onExportJson: () => void;
   onImportJson: () => void;
+  onOpenBackgroundManager?: () => void;
+  activeBackgroundName?: string;
 }
 
 export const ViewControls: React.FC<ViewControlsProps> = ({
@@ -41,6 +44,8 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   onOpenAssistantModal,
   onExportJson,
   onImportJson,
+  onOpenBackgroundManager,
+  activeBackgroundName,
 }) => {
   const handlePrint = () => {
     window.print();
@@ -57,6 +62,22 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           <Sparkles className="w-3.5 h-3.5" />
           <span>Neues Rezept analysieren</span>
         </button>
+
+        {onOpenBackgroundManager && (
+          <button
+            onClick={onOpenBackgroundManager}
+            className="px-3 py-1.5 rounded-lg bg-[#27221d] hover:bg-[#342d25] border border-[#3d342b] text-[#ded3c8] hover:text-[#f5eee6] flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Custom-Hintergründe & Kulissen verwalten"
+          >
+            <Palette className="w-3.5 h-3.5 text-[#c46637]" />
+            <span className="hidden sm:inline">Hintergründe</span>
+            {activeBackgroundName && (
+              <span className="text-[10px] text-[#9c8e82] hidden lg:inline">
+                ({activeBackgroundName})
+              </span>
+            )}
+          </button>
+        )}
 
         <button
           onClick={onOpenQualityDrawer}

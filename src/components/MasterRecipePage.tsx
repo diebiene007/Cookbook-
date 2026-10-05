@@ -1,17 +1,20 @@
 import React from 'react';
 import { RecipePageData } from '../types/recipe';
+import { CustomBackground } from '../types/backgrounds';
 import { Clock, Users, UtensilsCrossed, AlertCircle, Sparkles } from 'lucide-react';
 
 interface MasterRecipePageProps {
   recipe: RecipePageData;
   scale?: number;
   highlightBoxes?: boolean;
+  background?: CustomBackground;
 }
 
 export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
   recipe,
   scale = 1,
   highlightBoxes = false,
+  background,
 }) => {
   const {
     title,
@@ -123,8 +126,14 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
         {/* Left: Square 1:1 Photo Frame */}
         <div className="col-span-5 flex flex-col justify-center items-center">
           <div
-            className="w-[220px] h-[220px] rounded-xl overflow-hidden bg-[#F0E5D9] border border-[#E5D7CA] shadow-sm relative shrink-0"
-            title="Food-Foto (1:1 quadratisch)"
+            className="w-[220px] h-[220px] rounded-xl overflow-hidden shadow-sm relative shrink-0 transition-colors"
+            style={{
+              backgroundColor: background?.previewColor || '#F0E5D9',
+              borderColor: background?.previewBorderColor || '#E5D7CA',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+            }}
+            title={background ? `Food-Foto (1:1 quadratisch) · Hintergrund: ${background.name}` : 'Food-Foto (1:1 quadratisch)'}
           >
             {photoUrl ? (
               <img
@@ -134,13 +143,18 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
                 className="w-full h-full object-cover object-center"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-[#8C7A6D]">
+              <div
+                className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-[#8C7A6D]"
+                style={{
+                  background: background?.previewGradient || background?.previewColor || '#F0E5D9',
+                }}
+              >
                 <Sparkles className="w-8 h-8 mb-2 opacity-50" />
                 <span className="text-[11px] font-medium uppercase tracking-wider">
-                  Foto-Frame (1:1)
+                  {background?.name || 'Foto-Frame (1:1)'}
                 </span>
                 <span className="text-[9.5px] opacity-70 mt-1">
-                  Quadratisch · Keine Typografie
+                  {background?.mood || 'Quadratisch · Keine Typografie'}
                 </span>
               </div>
             )}

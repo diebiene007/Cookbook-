@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { RecipePageData, Season, Category, MasterVariant, IngredientGroup } from '../types/recipe';
+import { BackgroundCategory, CustomBackground } from '../types/backgrounds';
 import {
   Tag,
   Clock,
@@ -12,11 +13,16 @@ import {
   ArrowLeftRight,
   Image as ImageIcon,
   Flame,
+  Palette,
+  Check,
 } from 'lucide-react';
 
 interface DetailEditorProps {
   recipe: RecipePageData;
   onChange: (updated: RecipePageData) => void;
+  backgrounds?: CustomBackground[];
+  categories?: BackgroundCategory[];
+  onOpenBackgroundManager?: () => void;
 }
 
 const COMMON_TAGS = [
@@ -61,7 +67,13 @@ const PRESET_PHOTOS = [
   },
 ];
 
-export const DetailEditor: React.FC<DetailEditorProps> = ({ recipe, onChange }) => {
+export const DetailEditor: React.FC<DetailEditorProps> = ({
+  recipe,
+  onChange,
+  backgrounds = [],
+  categories = [],
+  onOpenBackgroundManager,
+}) => {
   const [activeTab, setActiveTab] = useState<
     'basis' | 'blick' | 'zutaten' | 'schritte' | 'naehrwerte' | 'foto'
   >('basis');
@@ -904,6 +916,107 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({ recipe, onChange }) 
                 <li>Zutaten im Bild müssen mit Rezept übereinstimmen</li>
               </ul>
             </div>
+          </div>
+
+          {/* Custom-Hintergrund & Kulisse */}
+          <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[#c46637] uppercase tracking-wider text-xs flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5" />
+                Saisonaler Custom-Hintergrund & Kulisse:
+              </span>
+
+              {onOpenBackgroundManager && (
+                <button
+                  type="button"
+                  onClick={onOpenBackgroundManager}
+                  className="text-[10.5px] text-[#cfc0b2] hover:text-[#f5eee6] hover:underline flex items-center gap-1"
+                >
+                  <Palette className="w-3 h-3 text-[#c46637]" />
+                  Verwalten...
+                </button>
+              )}
+            </div>
+
+            <p className="text-[10.5px] text-[#9c8e82]">
+              Wähle einen definierten Kulissen-Hintergrund, der zur Jahreszeit <strong>{recipe.season}</strong> passt, oder nutze den neutralen Standard.
+            </p>
+
+            {/* Quick Background Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {backgrounds.map(bg => {
+                const isSelected =
+                  recipe.customBackgroundId === bg.id ||
+                  (!recipe.customBackgroundId && bg.isNeutralDefault);
+
+                return (
+                  <button
+                    key={bg.id}
+                    type="button"
+                    onClick={() => update({ customBackgroundId: bg.id })}
+                    className={`p-2 rounded-lg border text-left flex items-center gap-2.5 transition-colors ${
+                      isSelected
+                        ? 'border-[#c46637] bg-[#32261e]'
+                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#4d3e33]'
+                    }`}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-md shrink-0 border shadow-inner overflow-hidden relative"
+                      style={{
+                        background: bg.previewGradient || bg.previewColor,
+                        borderColor: bg.previewBorderColor || '#D5C4B4',
+                      }}
+                    >
+                      {bg.previewImageUrl && (
+                        <img
+                          src={bg.previewImageUrl}
+                          alt={bg.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] font-semibold text-[#f5eee6] truncate">
+                          {bg.name}
+                        </span>
+                        {isSelected && <Check className="w-3 h-3 text-[#c46637] shrink-0" />}
+                      </div>
+                      <span className="text-[9.5px] text-[#8e8074] block truncate">
+                        {bg.mood}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Background info */}
+            {(() => {
+              const activeBg =
+                backgrounds.find(b => b.id === recipe.customBackgroundId) ||
+                backgrounds.find(b => b.isNeutralDefault);
+              if (!activeBg) return null;
+              return (
+                <div className="bg-[#1a1715] p-2.5 rounded-lg border border-[#312a23] text-[10.5px] text-[#b5a597] space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-[#f5eee6]">
+                      Aktive Kulisse: {activeBg.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => update({ customBackgroundId: undefined })}
+                      className="text-[10px] text-[#8e8074] hover:text-[#f5eee6] underline"
+                    >
+                      Auf Standard zurücksetzen
+                    </button>
+                  </div>
+                  <p className="italic text-[10px] text-[#918377]">
+                    „{activeBg.backdropPrompt}“
+                  </p>
+                </div>
+              );
+            })()}
           </div>
 
           <div>
