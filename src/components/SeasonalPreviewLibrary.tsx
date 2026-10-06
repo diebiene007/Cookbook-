@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { RecipePageData, Season } from '../types/recipe';
-import { CustomBackground, BackgroundCategory } from '../types/backgrounds';
 import {
   RecipePageBackground,
   getPageBackgroundById,
@@ -13,17 +12,13 @@ import {
   List,
   CheckCircle2,
   AlertCircle,
-  Palette,
 } from 'lucide-react';
 
 interface SeasonalPreviewLibraryProps {
   recipes: RecipePageData[];
   currentRecipeId: string;
   onSelectRecipe: (id: string) => void;
-  backgrounds: CustomBackground[];
-  backgroundCategories: BackgroundCategory[];
   onApplyBackgroundToSeason: (season: Season, backgroundId: string) => void;
-  onOpenBackgroundManager?: () => void;
 }
 
 const SEASONS: Season[] = ['Frühling', 'Sommer', 'Herbst', 'Winter', 'Zeitlos'];

@@ -26,6 +26,7 @@ interface RecipeImageGeneratorModalProps {
   backgrounds: CustomBackground[];
   categories: BackgroundCategory[];
   onApplyImage: (imageUrl: string) => void;
+  onOpenBackgroundManager?: () => void;
 }
 
 export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps> = ({
@@ -35,6 +36,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
   backgrounds,
   categories,
   onApplyImage,
+  onOpenBackgroundManager,
 }) => {
   // Options state
   const [backgroundOption, setBackgroundOption] = useState<string>('auto');
@@ -225,6 +227,15 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                   <Palette className="w-3.5 h-3.5" />
                   Foto-Kulisse / Untergrund (§4):
                 </label>
+                {onOpenBackgroundManager && (
+                  <button
+                    type="button"
+                    onClick={onOpenBackgroundManager}
+                    className="text-[10px] text-[#baa99b] hover:text-[#f5eee6] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    Foto-Kulissen verwalten...
+                  </button>
+                )}
               </div>
 
               <select

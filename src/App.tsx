@@ -463,6 +463,7 @@ export default function App() {
                 onChange={handleUpdateCurrentRecipe}
                 backgrounds={backgrounds}
                 categories={backgroundCategories}
+                onOpenPageMotifSelector={() => setIsPageMotifModalOpen(true)}
                 onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
               />
             )}
@@ -472,10 +473,7 @@ export default function App() {
                 recipes={recipes}
                 currentRecipeId={currentRecipe.id}
                 onSelectRecipe={id => setCurrentRecipeId(id)}
-                backgrounds={backgrounds}
-                backgroundCategories={backgroundCategories}
                 onApplyBackgroundToSeason={handleApplyBackgroundToSeason}
-                onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
               />
             )}
 
