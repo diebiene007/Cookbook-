@@ -10,6 +10,7 @@ import { DetailEditor } from './components/DetailEditor';
 import { AssistantInputModal } from './components/AssistantInputModal';
 import { QualityAuditDrawer } from './components/QualityAuditDrawer';
 import { BackgroundManagerModal } from './components/BackgroundManagerModal';
+import { PageMotifSelectorModal } from './components/PageMotifSelectorModal';
 import { SeasonalPreviewLibrary } from './components/SeasonalPreviewLibrary';
 import { ViewControls } from './components/ViewControls';
 import {
@@ -85,6 +86,7 @@ export default function App() {
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
   const [isQualityDrawerOpen, setIsQualityDrawerOpen] = useState<boolean>(false);
   const [isBackgroundManagerOpen, setIsBackgroundManagerOpen] = useState<boolean>(false);
+  const [isPageMotifModalOpen, setIsPageMotifModalOpen] = useState<boolean>(false);
   const [sidebarTab, setSidebarTab] = useState<'editor' | 'library' | 'rules'>('editor');
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -160,7 +162,7 @@ export default function App() {
 
   const handleApplyBackgroundToSeason = (season: Season, backgroundId: string) => {
     setRecipes(prev =>
-      prev.map(r => (r.season === season ? { ...r, customBackgroundId: backgroundId } : r))
+      prev.map(r => (r.season === season ? { ...r, pageBackgroundId: backgroundId } : r))
     );
   };
 
@@ -404,8 +406,8 @@ export default function App() {
         onOpenAssistantModal={() => setIsAssistantOpen(true)}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
-        onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
-        activeBackgroundName={activePageBackground.name}
+        onOpenPageMotifSelector={() => setIsPageMotifModalOpen(true)}
+        activeMotifName={activePageBackground.name}
       />
 
       {/* ────────────────────────────────────────────────────────
@@ -606,6 +608,16 @@ export default function App() {
         onAddCategory={handleAddCategory}
         onAddBackground={handleAddBackground}
         onDeleteBackground={handleDeleteBackground}
+      />
+
+      <PageMotifSelectorModal
+        isOpen={isPageMotifModalOpen}
+        onClose={() => setIsPageMotifModalOpen(false)}
+        season={currentRecipe.season}
+        selectedBackgroundId={currentRecipe.pageBackgroundId}
+        onSelectMotif={bgId =>
+          handleUpdateCurrentRecipe({ ...currentRecipe, pageBackgroundId: bgId })
+        }
       />
     </div>
   );

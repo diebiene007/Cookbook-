@@ -16,7 +16,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
     id: 'page-bg-fruehling-1',
     name: 'Frische Kräuter',
     season: 'Frühling',
-    description: 'Basilikum- & Kräuterzweige mit frischen kleinen Blättern in den Ecken.',
+    description: 'Basilikum- & Kräuterzweige mit frischen Blättern in den Ecken.',
     isDefault: true,
     motifKey: 'fruehling-kraeuter',
     accentColor: '#6E9864',
@@ -31,9 +31,9 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-fruehling-3',
-    name: 'Frühlingsblüten',
+    name: 'Reduzierte Frühlingsblüten',
     season: 'Frühling',
-    description: 'Dezente kleine Frühlingsblüten und Blätter im reduzierten Editorial-Look.',
+    description: 'Dezente kleine Frühlingsblüten im reduzierten Editorial-Look.',
     motifKey: 'fruehling-blueten',
     accentColor: '#8EAA80',
   },
@@ -47,9 +47,9 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-fruehling-5',
-    name: 'Frisches Aquarell',
+    name: 'Salbei-Aquarell',
     season: 'Frühling',
-    description: 'Sehr weiche, abstrakte Aquarellflächen in Salbei & hellem Grün.',
+    description: 'Sehr weiche, diffuse Aquarellflächen in Salbei & zartem Lindgrün.',
     motifKey: 'fruehling-aquarell',
     accentColor: '#88B27F',
   },
@@ -57,9 +57,9 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   // ─── SOMMER (5 MOTIVE) ─────────────────────────────────────
   {
     id: 'page-bg-sommer-1',
-    name: 'Zitrone & Blätter',
+    name: 'Kleiner Zitronenzweig',
     season: 'Sommer',
-    description: 'Dezente Zitronenzweige mit wenigen kleinen Früchten in der Ecke.',
+    description: 'Dezente Zitronenzweige mit kleiner Fruchtkontur im Randbereich.',
     motifKey: 'sommer-zitrone',
     accentColor: '#E29B38',
   },
@@ -67,14 +67,14 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
     id: 'page-bg-sommer-2',
     name: 'Olivenzweige',
     season: 'Sommer',
-    description: 'Feine mediterrane Olivenzweige mit gedecktem Olivgrün am Seitenrand.',
+    description: 'Feine mediterrane Olivenzweige mit gedecktem Olivgrün am Rand.',
     isDefault: true,
     motifKey: 'sommer-oliven',
     accentColor: '#787352',
   },
   {
     id: 'page-bg-sommer-3',
-    name: 'Sommerkräuter',
+    name: 'Rosmarin / Sommerkräuter',
     season: 'Sommer',
     description: 'Rosmarin- und Sommerkräuterzweige als elegante Randgestaltung.',
     motifKey: 'sommer-kraeuter',
@@ -82,7 +82,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-sommer-4',
-    name: 'Sonniges Aquarell',
+    name: 'Apricot-Honig-Aquarell',
     season: 'Sommer',
     description: 'Abstrakte sehr weiche Aquarellflächen in Honig, Apricot und Pfirsich.',
     motifKey: 'sommer-aquarell',
@@ -90,26 +90,26 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-sommer-5',
-    name: 'Mediterrane Linien',
+    name: 'Mediterrane botanische Line Art',
     season: 'Sommer',
     description: 'Feine organische mediterrane Formen und Pflanzenlinien am Rand.',
-    motifKey: 'sommer-linien',
+    motifKey: 'sommer-line-art',
     accentColor: '#BD8044',
   },
 
   // ─── HERBST (5 MOTIVE) ─────────────────────────────────────
   {
     id: 'page-bg-herbst-1',
-    name: 'Herbstlaub',
+    name: 'Elegantes Herbstlaub',
     season: 'Herbst',
-    description: 'Wenige feine, leicht aquarellierte Herbstblätter in warmem Ocker & Terrakotta.',
+    description: 'Feine botanische Herbstblätter in warmem Ocker & Terrakotta.',
     isDefault: true,
     motifKey: 'herbst-laub',
     accentColor: '#B85829',
   },
   {
     id: 'page-bg-herbst-2',
-    name: 'Zweige & getrocknete Blätter',
+    name: 'Getrocknete Zweige',
     season: 'Herbst',
     description: 'Elegante feine Zweige mit einzelnen getrockneten Blättern am Rand.',
     motifKey: 'herbst-zweige',
@@ -117,9 +117,9 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-herbst-3',
-    name: 'Goldenes Aquarell',
+    name: 'Ocker-Terrakotta-Aquarell',
     season: 'Herbst',
-    description: 'Sehr dezente organische Aquarellflächen in warmem Ocker, Beige & Terrakotta.',
+    description: 'Sehr dezente organische Aquarellflächen in warmem Ocker & Terrakotta.',
     motifKey: 'herbst-aquarell',
     accentColor: '#C87B3E',
   },
@@ -133,9 +133,9 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-herbst-5',
-    name: 'Warmes Naturmotiv',
+    name: 'Warme organische Naturformen',
     season: 'Herbst',
-    description: 'Reduzierte Kombination aus einzelnen Blättern und warmen organischen Formen.',
+    description: 'Reduzierte Kombination aus einzelnen Blättern und warmen Naturformen.',
     motifKey: 'herbst-natur',
     accentColor: '#A85A2A',
   },
@@ -143,7 +143,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   // ─── WINTER (5 MOTIVE) ─────────────────────────────────────
   {
     id: 'page-bg-winter-1',
-    name: 'Winterzweige',
+    name: 'Kahle Winterzweige',
     season: 'Winter',
     description: 'Feine kahle Zweige in Rauchblau, Graublau und dezentem Winterfrost.',
     isDefault: true,
@@ -152,7 +152,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-winter-2',
-    name: 'Tannenzweige',
+    name: 'Reduzierte Tannenzweige',
     season: 'Winter',
     description: 'Sehr dezente nordische Tannenzweige ohne Weihnachtsdekoration.',
     motifKey: 'winter-tannen',
@@ -160,7 +160,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-winter-3',
-    name: 'Frostiges Aquarell',
+    name: 'Eisblau-Rauchblau-Aquarell',
     season: 'Winter',
     description: 'Sehr weiche Aquarellflächen in Eisblau, Rauchblau und hellem Graublau.',
     motifKey: 'winter-aquarell',
@@ -168,7 +168,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-winter-4',
-    name: 'Nordic Line Art',
+    name: 'Nordic Botanical Line Art',
     season: 'Winter',
     description: 'Minimalistische botanische Linienzeichnung in kühlen Blautönen.',
     motifKey: 'winter-line-art',
@@ -176,7 +176,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-winter-5',
-    name: 'Eisige organische Formen',
+    name: 'Abstrakte frostige Naturformen',
     season: 'Winter',
     description: 'Sehr abstrakte, weiche Winterformen in ruhigem Kaltton.',
     motifKey: 'winter-formen',
@@ -186,7 +186,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   // ─── ZEITLOS (5 MOTIVE) ────────────────────────────────────
   {
     id: 'page-bg-zeitlos-1',
-    name: 'Leinen',
+    name: 'Feine Leinenstruktur',
     season: 'Zeitlos',
     description: 'Subtile warme Leinenstruktur und feine Naturpapierfaser.',
     motifKey: 'zeitlos-leinen',
@@ -194,7 +194,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-zeitlos-2',
-    name: 'Organische Linien',
+    name: 'Organische Konturlinien',
     season: 'Zeitlos',
     description: 'Feine abstrakte organische Linien in Greige, Taupe und warmem Beige.',
     motifKey: 'zeitlos-linien',
@@ -202,7 +202,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-zeitlos-3',
-    name: 'Greige Aquarell',
+    name: 'Greige-Aquarell',
     season: 'Zeitlos',
     description: 'Sehr leichte abstrakte Steinton-Aquarellflächen.',
     motifKey: 'zeitlos-aquarell',
@@ -210,7 +210,7 @@ export const RECIPE_PAGE_BACKGROUNDS: RecipePageBackground[] = [
   },
   {
     id: 'page-bg-zeitlos-4',
-    name: 'Botanische Kontur',
+    name: 'Monochrome botanische Kontur',
     season: 'Zeitlos',
     description: 'Extrem reduzierte monochrome botanische Line-Art.',
     motifKey: 'zeitlos-kontur',
@@ -266,7 +266,6 @@ export function getPageBackgroundById(id?: string, season: Season = 'Frühling')
   if (id) {
     const found = RECIPE_PAGE_BACKGROUNDS.find(b => b.id === id);
     if (found) {
-      // Valid if it matches the current season OR is the neutral fallback
       if (found.season === season || found.season === 'Neutral') {
         return found;
       }

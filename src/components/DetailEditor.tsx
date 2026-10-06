@@ -441,63 +441,6 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
             </div>
           </div>
 
-          {/* Rezeptseiten-Hintergrund (5 Motive der Saison + Neutraler Standard) */}
-          <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[#c46637] font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5" />
-                <span>Rezeptseiten-Hintergrund ({recipe.season}):</span>
-              </label>
-              <span className="text-[10px] text-[#baa99b] truncate max-w-[200px]">
-                {(() => {
-                  const activeBg = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
-                  return activeBg.name;
-                })()}
-              </span>
-            </div>
-
-            {/* 5 Seasonal Motif Cards + Neutral */}
-            <div className="grid grid-cols-2 gap-2">
-              {getPageBackgroundsForSeason(recipe.season).map(bg => {
-                const currentActive = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
-                const isSelected = currentActive.id === bg.id;
-
-                return (
-                  <button
-                    key={bg.id}
-                    type="button"
-                    onClick={() => update({ pageBackgroundId: bg.id })}
-                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-[#c46637] bg-[#34271f] ring-2 ring-[#c46637]/50 shadow-md'
-                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#524336] hover:bg-[#221d19]'
-                    }`}
-                    title={bg.description}
-                  >
-                    <SeasonalBackgroundThumbnail
-                      pageBackgroundId={bg.id}
-                      season={bg.season}
-                      className="w-8 h-11"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-[11px] font-semibold text-[#f5eee6] truncate leading-tight">
-                          {bg.name}
-                        </span>
-                        {isSelected && (
-                          <Check className="w-3.5 h-3.5 text-[#c46637] shrink-0" />
-                        )}
-                      </div>
-                      <span className="text-[9px] text-[#8e8074] block truncate mt-0.5">
-                        {bg.season === 'Neutral' ? 'Reines Creme #FFF7F0' : bg.description}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* 4 Tags */}
           <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-2.5">
             <div className="flex items-center justify-between">
@@ -713,6 +656,63 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
                   Hinweis: {tagError}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Primäre Auswahl: Seitenmotiv (5 Motive der Saison + Neutraler Standard) */}
+          <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[#c46637] font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5" />
+                <span>Seitenmotiv ({recipe.season}):</span>
+              </label>
+              <span className="text-[10px] text-[#baa99b] truncate max-w-[200px]">
+                {(() => {
+                  const activeBg = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
+                  return activeBg.name;
+                })()}
+              </span>
+            </div>
+
+            {/* 5 Seasonal Motif Cards + Neutral */}
+            <div className="grid grid-cols-2 gap-2">
+              {getPageBackgroundsForSeason(recipe.season).map(bg => {
+                const currentActive = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
+                const isSelected = currentActive.id === bg.id;
+
+                return (
+                  <button
+                    key={bg.id}
+                    type="button"
+                    onClick={() => update({ pageBackgroundId: bg.id })}
+                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[#c46637] bg-[#34271f] ring-2 ring-[#c46637]/50 shadow-md'
+                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#524336] hover:bg-[#221d19]'
+                    }`}
+                    title={bg.description}
+                  >
+                    <SeasonalBackgroundThumbnail
+                      pageBackgroundId={bg.id}
+                      season={bg.season}
+                      className="w-8 h-11"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] font-semibold text-[#f5eee6] truncate leading-tight">
+                          {bg.name}
+                        </span>
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-[#c46637] shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[9px] text-[#8e8074] block truncate mt-0.5">
+                        {bg.season === 'Neutral' ? 'Reines Creme #FFF7F0' : bg.description}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1288,62 +1288,15 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
             </div>
           </div>
 
-          {/* Rezeptseiten-Hintergrund der gesamten A4-Seite */}
-          <div className="bg-[#24201c] p-3.5 rounded-xl border border-[#362e26] space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-[#c46637] uppercase tracking-wider text-xs flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5" />
-                Rezeptseiten-Hintergrund ({recipe.season}):
-              </span>
-              <span className="text-[10px] text-[#baa99b] truncate max-w-[200px]">
-                {(() => {
-                  const activeBg = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
-                  return activeBg.name;
-                })()}
+          {/* Dezenter Hinweis auf das aktive A4-Seitenmotiv */}
+          <div className="bg-[#1e1a17] p-3 rounded-xl border border-[#362e26] text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[#baa99b]">
+              <Palette className="w-3.5 h-3.5 text-[#c46637]" />
+              <span>
+                Aktuelles Seitenmotiv: <strong className="text-[#f5eee6]">{getPageBackgroundById(recipe.pageBackgroundId, recipe.season).name}</strong>
               </span>
             </div>
-
-            <p className="text-[10.5px] text-[#9c8e82]">
-              Wähle ein dezentes saisonales Motiv für die gesamte A4-Rezeptseite. Auf dem warmen Cremegrund (#FFF7F0) mit botanischen Akzenten an den Rändern und Ecken.
-            </p>
-
-            {/* Quick Background Cards (Filtered by current season) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {getPageBackgroundsForSeason(recipe.season).map(bg => {
-                const currentActive = getPageBackgroundById(recipe.pageBackgroundId, recipe.season);
-                const isSelected = currentActive.id === bg.id;
-
-                return (
-                  <button
-                    key={bg.id}
-                    type="button"
-                    onClick={() => update({ pageBackgroundId: bg.id })}
-                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-[#c46637] bg-[#34271f] ring-2 ring-[#c46637]/50 shadow-md'
-                        : 'border-[#382f26] bg-[#1a1715] hover:border-[#524336] hover:bg-[#221d19]'
-                    }`}
-                  >
-                    <SeasonalBackgroundThumbnail
-                      pageBackgroundId={bg.id}
-                      season={bg.season}
-                      className="w-9 h-12"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-[11px] font-semibold text-[#f5eee6] truncate">
-                          {bg.name}
-                        </span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#c46637] shrink-0" />}
-                      </div>
-                      <span className="text-[9px] text-[#8e8074] block truncate mt-0.5">
-                        {bg.season === 'Neutral' ? 'Reines Creme #FFF7F0' : bg.description}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <span className="text-[10px] text-[#8e8074]">Wird unter „Basis“ eingestellt</span>
           </div>
 
           <div>

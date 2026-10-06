@@ -9,12 +9,13 @@ interface SeasonalBackgroundLayerProps {
 }
 
 /**
- * Editorial Recipe Page Background Layer.
- * Renders across the entire A4 canvas (794 x 1123 px).
- * - Base warm cream background #FFF7F0
- * - Delicate, quiet, botanical & watercolor-like elements placed strictly at margins and corners
- * - Visually clear and distinct for each of the 25 seasonal motifs (8-22% opacity)
- * - 100% print and PDF safe (rendered as inline SVG vectors, not CSS background-images)
+ * High-End Editorial Seasonal Background Layer.
+ * - Base Warm Cream Paper: #FFF7F0
+ * - Strictly respects recipe content safe-zones (no lines behind title, tags, ingredients or steps)
+ * - 90% calm paper canvas, 10% delicate botanical art direction
+ * - Watercolor washes are ultra-diffuse and borderless (4-8% opacity)
+ * - Botanical line art is fine, organic and hand-drawn (8-14% opacity)
+ * - 100% inline SVG vectors, fully print-safe and PDF-ready
  */
 export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = ({
   pageBackgroundId,
@@ -43,65 +44,18 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Spring Watercolor Gradients */}
-          <radialGradient id="sp-wash-tr" cx="85%" cy="8%" r="35%">
-            <stop offset="0%" stopColor="#88B27F" stopOpacity="0.22" />
-            <stop offset="60%" stopColor="#9EC795" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="sp-wash-bl" cx="12%" cy="92%" r="30%">
-            <stop offset="0%" stopColor="#88B27F" stopOpacity="0.20" />
-            <stop offset="60%" stopColor="#9EC795" stopOpacity="0.06" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
+          {/* Subtle diffused blur filter for organic watercolor aura */}
+          <filter id="soft-wash-blur" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="45" />
+          </filter>
+          <filter id="soft-wash-wide" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="65" />
+          </filter>
 
-          {/* Summer Watercolor Gradients */}
-          <radialGradient id="su-wash-tr" cx="85%" cy="8%" r="35%">
-            <stop offset="0%" stopColor="#E6A35C" stopOpacity="0.24" />
-            <stop offset="60%" stopColor="#F5C48A" stopOpacity="0.09" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="su-wash-bl" cx="15%" cy="90%" r="30%">
-            <stop offset="0%" stopColor="#E29B38" stopOpacity="0.20" />
-            <stop offset="60%" stopColor="#F5C48A" stopOpacity="0.07" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Autumn Watercolor Gradients */}
-          <radialGradient id="au-wash-tr" cx="85%" cy="8%" r="38%">
-            <stop offset="0%" stopColor="#B85829" stopOpacity="0.22" />
-            <stop offset="60%" stopColor="#DE8A52" stopOpacity="0.09" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="au-wash-bl" cx="12%" cy="92%" r="30%">
-            <stop offset="0%" stopColor="#C87B3E" stopOpacity="0.20" />
-            <stop offset="60%" stopColor="#E2A169" stopOpacity="0.07" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Winter Watercolor Gradients */}
-          <radialGradient id="wi-wash-tr" cx="85%" cy="8%" r="35%">
-            <stop offset="0%" stopColor="#557B8E" stopOpacity="0.22" />
-            <stop offset="60%" stopColor="#80A4B5" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="wi-wash-bl" cx="12%" cy="92%" r="30%">
-            <stop offset="0%" stopColor="#4F7285" stopOpacity="0.18" />
-            <stop offset="60%" stopColor="#7E9FA0" stopOpacity="0.06" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Timeless Watercolor Gradients */}
-          <radialGradient id="ti-wash-tr" cx="85%" cy="8%" r="35%">
-            <stop offset="0%" stopColor="#8C7B6E" stopOpacity="0.20" />
-            <stop offset="60%" stopColor="#B2A396" stopOpacity="0.07" />
-            <stop offset="100%" stopColor="#FFF7F0" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Subtle Linen Pattern for Zeitlos 1 */}
-          <pattern id="linen-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="10" x2="20" y2="10" stroke="#7A6B5F" strokeWidth="0.5" strokeOpacity="0.07" />
-            <line x1="10" y1="0" x2="10" y2="20" stroke="#7A6B5F" strokeWidth="0.5" strokeOpacity="0.07" />
+          {/* Linen Texture Pattern for Zeitlos 1 */}
+          <pattern id="linen-weave" width="16" height="16" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="8" x2="16" y2="8" stroke="#8A7B6E" strokeWidth="0.4" strokeOpacity="0.05" />
+            <line x1="8" y1="0" x2="8" y2="16" stroke="#8A7B6E" strokeWidth="0.4" strokeOpacity="0.05" />
           </pattern>
         </defs>
 
@@ -109,93 +63,112 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
             1. FRÜHLING MOTIFE (5 VARIANTEN)
             ════════════════════════════════════════════════════════════ */}
 
-        {/* FRÜHLING 1: Frische Kräuter (Basilikum/Kräuterzweige oben rechts & unten links) */}
+        {/* FRÜHLING 1: Frische Kräuter (Basilikum- & Kräuterzweige strictly at corners) */}
         {motif === 'fruehling-kraeuter' && (
           <g>
-            {/* Top Right Corner Herbs */}
-            <circle cx="730" cy="70" r="160" fill="url(#sp-wash-tr)" />
-            <g stroke="#4F7344" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.28">
-              <path d="M 785 10 C 750 35, 710 65, 665 85" />
-              {/* Herb leaves */}
-              <path d="M 715 60 C 695 48, 680 35, 700 28 C 720 22, 730 40, 715 60 Z" fill="#7BA672" fillOpacity="0.45" />
-              <path d="M 720 62 C 735 85, 730 105, 715 100 C 700 95, 705 75, 720 62 Z" fill="#8FB984" fillOpacity="0.45" />
-              <path d="M 748 35 C 730 20, 720 10, 738 6 C 755 2, 762 18, 748 35 Z" fill="#7BA672" fillOpacity="0.40" />
-              <path d="M 675 80 C 655 75, 642 65, 658 58 C 674 52, 685 68, 675 80 Z" fill="#A5CB96" fillOpacity="0.45" />
-            </g>
-
-            {/* Bottom Left Corner Herbs */}
-            <circle cx="70" cy="1050" r="140" fill="url(#sp-wash-bl)" />
-            <g stroke="#4F7344" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.25">
-              <path d="M 10 1115 C 45 1090, 85 1060, 130 1040" />
-              <path d="M 80 1065 C 65 1045, 70 1025, 88 1030 C 105 1035, 95 1055, 80 1065 Z" fill="#7BA672" fillOpacity="0.45" />
-              <path d="M 85 1062 C 100 1082, 95 1102, 80 1098 C 65 1092, 72 1075, 85 1062 Z" fill="#8FB984" fillOpacity="0.45" />
-            </g>
-          </g>
-        )}
-
-        {/* FRÜHLING 2: Zarte Blätter (Aquarellierte junge Blätter entlang Seitenrand) */}
-        {motif === 'fruehling-blaetter' && (
-          <g>
-            <circle cx="740" cy="90" r="140" fill="url(#sp-wash-tr)" />
-            {/* Delicate leaves cascading down the right margin */}
-            <g stroke="#4B6E40" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.26">
-              <path d="M 770 40 C 760 120, 765 220, 755 320" />
-              <path d="M 764 80 Q 735 65 725 45 Q 745 42 764 76" fill="#7BA672" fillOpacity="0.45" />
-              <path d="M 764 80 Q 775 110, 768 128 Q 755 118 762 84" fill="#8FB984" fillOpacity="0.4" />
-              <path d="M 762 160 Q 732 148 722 130 Q 742 128 762 155" fill="#7BA672" fillOpacity="0.45" />
-              <path d="M 760 240 Q 730 230 720 215 Q 740 212 760 235" fill="#8FB984" fillOpacity="0.45" />
-            </g>
-          </g>
-        )}
-
-        {/* FRÜHLING 3: Frühlingsblüten (Dezente Blüten & Blätter im Editorial-Look) */}
-        {motif === 'fruehling-blueten' && (
-          <g>
-            <circle cx="730" cy="70" r="150" fill="url(#sp-wash-tr)" />
-            <g stroke="#537548" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.28">
-              <path d="M 780 15 C 750 40, 715 70, 680 85" />
-              {/* Petals of subtle blossom */}
-              <circle cx="682" cy="85" r="7" fill="#FFF7F0" stroke="#7BA672" strokeWidth="1" fillOpacity="0.9" />
-              <circle cx="682" cy="74" r="5" fill="#FFF7F0" stroke="#7BA672" strokeWidth="0.8" fillOpacity="0.8" />
-              <circle cx="692" cy="82" r="5" fill="#FFF7F0" stroke="#7BA672" strokeWidth="0.8" fillOpacity="0.8" />
-              <circle cx="686" cy="94" r="5" fill="#FFF7F0" stroke="#7BA672" strokeWidth="0.8" fillOpacity="0.8" />
-              <circle cx="673" cy="90" r="5" fill="#FFF7F0" stroke="#7BA672" strokeWidth="0.8" fillOpacity="0.8" />
-              <circle cx="673" cy="78" r="5" fill="#FFF7F0" stroke="#7BA672" strokeWidth="0.8" fillOpacity="0.8" />
-              <circle cx="682" cy="85" r="2.5" fill="#D9822B" fillOpacity="0.6" stroke="none" />
-              {/* Green leaf accent */}
-              <path d="M 720 60 Q 695 48 688 35 Q 708 34 722 56" fill="#7BA672" fillOpacity="0.4" />
-            </g>
-          </g>
-        )}
-
-        {/* FRÜHLING 4: Botanical Line Art (Sehr feine Linienzeichnung mit grünen Akzenten) */}
-        {motif === 'fruehling-line-art' && (
-          <g>
-            {/* Fine contour line art top right */}
-            <g stroke="#486D3E" strokeWidth="0.9" fill="none" opacity="0.25">
-              <path d="M 780 10 C 750 30, 710 60, 670 75 C 640 85, 620 120, 610 160" />
-              <path d="M 720 52 C 700 35, 680 40, 685 20 C 710 25, 725 40, 720 52 Z" />
-              <path d="M 670 75 C 650 60, 635 68, 642 50 C 662 55, 675 70, 670 75 Z" />
-              <circle cx="700" cy="32" r="16" fill="#88B27F" fillOpacity="0.18" stroke="none" />
-              <circle cx="654" cy="62" r="14" fill="#A5CB96" fillOpacity="0.18" stroke="none" />
-            </g>
-          </g>
-        )}
-
-        {/* FRÜHLING 5: Frisches Aquarell (Weiche Aquarellflächen in Salbei & Grün in 2 Ecken) */}
-        {motif === 'fruehling-aquarell' && (
-          <g>
-            <circle cx="740" cy="70" r="180" fill="url(#sp-wash-tr)" />
-            <circle cx="60" cy="1060" r="170" fill="url(#sp-wash-bl)" />
+            {/* Diffused corner watercolor aura */}
             <path
-              d="M 620 0 C 660 60, 720 90, 794 80 L 794 0 Z"
-              fill="#7BA672"
-              fillOpacity="0.08"
+              d="M 680 -20 Q 770 10 810 110 Q 760 160 700 80 Z"
+              fill="#7AA66E"
+              opacity="0.07"
+              filter="url(#soft-wash-blur)"
             />
             <path
-              d="M 0 1040 C 60 1050, 100 1090, 120 1123 L 0 1123 Z"
-              fill="#8FB984"
-              fillOpacity="0.08"
+              d="M -20 1040 Q 60 1010 100 1140 Z"
+              fill="#88B27F"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+
+            {/* Hand-drawn herb sprig top right corner (creeping from edge) */}
+            <g stroke="#3F6335" strokeWidth="0.9" fill="none" opacity="0.14" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M 794 15 C 772 32, 755 58, 742 90 C 738 100, 735 118, 738 132" />
+              {/* Herb leaf pairs */}
+              <path d="M 770 34 C 754 22, 744 14, 756 6 C 768 -2, 778 16, 770 34 Z" fill="#6E9864" fillOpacity="0.12" />
+              <path d="M 764 42 C 776 56, 782 72, 770 76 C 758 80, 754 62, 764 42 Z" fill="#7AA66E" fillOpacity="0.12" />
+              <path d="M 748 74 C 732 64, 722 54, 734 46 C 746 38, 756 56, 748 74 Z" fill="#6E9864" fillOpacity="0.12" />
+              <path d="M 744 82 C 754 98, 756 112, 744 116 C 732 120, 734 102, 744 82 Z" fill="#88B27F" fillOpacity="0.12" />
+            </g>
+
+            {/* Delicate lower-left sprig */}
+            <g stroke="#3F6335" strokeWidth="0.85" fill="none" opacity="0.13" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M 5 1120 C 24 1098, 38 1072, 42 1045" />
+              <path d="M 22 1102 C 34 1088, 44 1082, 38 1074 C 32 1066, 18 1082, 22 1102 Z" fill="#6E9864" fillOpacity="0.11" />
+              <path d="M 34 1078 C 48 1064, 58 1060, 52 1052 C 46 1044, 30 1060, 34 1078 Z" fill="#7AA66E" fillOpacity="0.11" />
+            </g>
+          </g>
+        )}
+
+        {/* FRÜHLING 2: Zarte Blätter (Aquarellierte junge Blätter entlang der Seitenkante) */}
+        {motif === 'fruehling-blaetter' && (
+          <g>
+            <path
+              d="M 740 60 Q 820 120 780 240 Q 720 180 740 60 Z"
+              fill="#88B27F"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            {/* Fine cascading branch strictly on outer 30px margin */}
+            <g stroke="#426639" strokeWidth="0.85" fill="none" opacity="0.13" strokeLinecap="round">
+              <path d="M 790 30 C 778 90, 775 160, 782 230 C 785 260, 778 300, 772 340" />
+              <path d="M 784 70 C 768 56, 758 46, 768 40 C 778 34, 786 52, 784 70 Z" fill="#7AA66E" fillOpacity="0.12" />
+              <path d="M 780 120 C 764 108, 754 98, 764 92 C 774 86, 782 102, 780 120 Z" fill="#6E9864" fillOpacity="0.12" />
+              <path d="M 778 180 C 762 170, 752 160, 762 154 C 772 148, 780 162, 778 180 Z" fill="#88B27F" fillOpacity="0.12" />
+              <path d="M 780 240 C 766 230, 756 222, 766 216 C 776 210, 782 224, 780 240 Z" fill="#7AA66E" fillOpacity="0.12" />
+            </g>
+          </g>
+        )}
+
+        {/* FRÜHLING 3: Reduzierte Frühlingsblüten (Wenige zarte Knospen & Blüten im Editorial-Look) */}
+        {motif === 'fruehling-blueten' && (
+          <g>
+            <path
+              d="M 700 -10 Q 780 20 810 120 Q 730 90 700 -10 Z"
+              fill="#A2C497"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            {/* Delicate twig with subtle blossom silhouette in extreme corner */}
+            <g stroke="#48683D" strokeWidth="0.8" fill="none" opacity="0.14" strokeLinecap="round">
+              <path d="M 794 20 C 774 38, 760 62, 752 88" />
+              {/* Petals */}
+              <path d="M 752 88 C 744 76, 736 82, 742 94 C 748 104, 758 98, 752 88 Z" fill="#FFF7F0" stroke="#48683D" strokeWidth="0.7" fillOpacity="0.8" />
+              <path d="M 752 88 C 762 80, 768 88, 762 98 C 756 106, 746 98, 752 88 Z" fill="#FFF7F0" stroke="#48683D" strokeWidth="0.7" fillOpacity="0.8" />
+              <circle cx="752" cy="88" r="1.5" fill="#D98A3B" fillOpacity="0.4" stroke="none" />
+              <path d="M 772 45 C 758 35, 754 44, 766 52 Z" fill="#7AA66E" fillOpacity="0.12" />
+            </g>
+          </g>
+        )}
+
+        {/* FRÜHLING 4: Botanical Line Art (Minimalistische Linienführung ohne Flächen) */}
+        {motif === 'fruehling-line-art' && (
+          <g>
+            <g stroke="#3E6135" strokeWidth="0.75" fill="none" opacity="0.12" strokeLinecap="round">
+              {/* Continuous one-line botanical gesture hugging upper right boundary */}
+              <path d="M 794 10 C 765 25, 750 50, 745 80 C 740 110, 748 140, 742 170" />
+              <path d="M 762 38 C 748 30, 742 22, 752 18 C 762 14, 770 28, 762 38" />
+              <path d="M 748 76 C 734 68, 728 58, 738 54 C 748 50, 756 66, 748 76" />
+              <path d="M 744 122 C 730 114, 726 106, 736 102 C 744 98, 752 112, 744 122" />
+              {/* Tiny watercolor accent tucked behind line */}
+              <circle cx="750" cy="50" r="12" fill="#7AA66E" fillOpacity="0.06" stroke="none" filter="url(#soft-wash-blur)" />
+            </g>
+          </g>
+        )}
+
+        {/* FRÜHLING 5: Salbei-Aquarell (Weiche diffuse Farbschleier an gegenüberliegenden Ecken) */}
+        {motif === 'fruehling-aquarell' && (
+          <g>
+            <path
+              d="M 640 -40 C 720 -20, 810 40, 810 140 C 750 140, 680 80, 640 -40 Z"
+              fill="#7AA66E"
+              opacity="0.08"
+              filter="url(#soft-wash-wide)"
+            />
+            <path
+              d="M -40 1020 C 40 1020, 140 1080, 120 1150 C 40 1150, -20 1100, -40 1020 Z"
+              fill="#88B27F"
+              opacity="0.07"
+              filter="url(#soft-wash-wide)"
             />
           </g>
         )}
@@ -204,69 +177,98 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
             2. SOMMER MOTIFE (5 VARIANTEN)
             ════════════════════════════════════════════════════════════ */}
 
-        {/* SOMMER 1: Zitrone & Blätter (Dezente Zitronenzweige in der Ecke) */}
+        {/* SOMMER 1: Kleiner Zitronenzweig (Dezenter Zweig mit kleiner Fruchtsilhouette) */}
         {motif === 'sommer-zitrone' && (
           <g>
-            <circle cx="730" cy="70" r="160" fill="url(#su-wash-tr)" />
-            <g stroke="#9E6122" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.28">
-              <path d="M 785 15 C 750 38, 715 68, 675 85" />
+            <path
+              d="M 690 -20 Q 780 10 810 100 Q 750 140, 690 -20 Z"
+              fill="#E8A64E"
+              opacity="0.07"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#78592A" strokeWidth="0.85" fill="none" opacity="0.14" strokeLinecap="round">
+              <path d="M 794 15 C 772 32, 755 58, 748 85" />
               {/* Citrus leaves */}
-              <path d="M 720 62 Q 695 46 688 30 Q 708 28 724 55" fill="#8F9E62" fillOpacity="0.45" />
-              <path d="M 720 62 Q 732 90 726 108 Q 714 96 718 66" fill="#A5B278" fillOpacity="0.45" />
-              {/* Small subtle lemon */}
-              <ellipse cx="668" cy="92" rx="14" ry="17" fill="#FBD694" fillOpacity="0.55" stroke="#C77D24" strokeWidth="1" />
-              <path d="M 670 75 Q 673 70 675 67" stroke="#9E6122" strokeWidth="1" />
+              <path d="M 770 32 C 756 20, 748 14, 758 8 C 768 2, 778 18, 770 32 Z" fill="#788850" fillOpacity="0.12" />
+              <path d="M 754 75 C 740 65, 734 55, 744 50 C 754 44, 762 62, 754 75 Z" fill="#788850" fillOpacity="0.12" />
+              {/* Small understated lemon silhouette */}
+              <path
+                d="M 748 85 C 744 98, 750 110, 760 114 C 770 116, 778 106, 774 92 C 770 82, 754 78, 748 85 Z"
+                fill="#F0C265"
+                fillOpacity="0.22"
+                stroke="#9E7030"
+                strokeWidth="0.75"
+              />
             </g>
           </g>
         )}
 
-        {/* SOMMER 2: Olivenzweige (Feine toskanische Olivenzweige am Rand) */}
+        {/* SOMMER 2: Olivenzweige (Feine toskanische Olivenblätter am Seitenrand) */}
         {motif === 'sommer-oliven' && (
           <g>
-            <circle cx="740" cy="80" r="150" fill="url(#su-wash-tr)" />
-            <g stroke="#666144" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.26">
-              <path d="M 775 30 C 760 120, 762 220, 755 320" />
-              <path d="M 764 70 Q 736 60 726 50 Q 742 46 764 66" fill="#8A8E6F" fillOpacity="0.45" />
-              <path d="M 762 120 Q 734 114 724 104 Q 740 100 762 116" fill="#8A8E6F" fillOpacity="0.45" />
-              <path d="M 760 170 Q 732 168 722 158 Q 738 154 760 166" fill="#8A8E6F" fillOpacity="0.45" />
-              <path d="M 758 230 Q 730 230 720 222 Q 736 216 758 226" fill="#8A8E6F" fillOpacity="0.45" />
-              {/* Subtle dark olives */}
-              <ellipse cx="730" cy="126" rx="5" ry="6.5" fill="#4B4734" fillOpacity="0.45" stroke="#4B4734" strokeWidth="0.8" />
-              <ellipse cx="728" cy="235" rx="5" ry="6.5" fill="#4B4734" fillOpacity="0.45" stroke="#4B4734" strokeWidth="0.8" />
+            <path
+              d="M 740 40 Q 820 120 780 250 Q 730 180 740 40 Z"
+              fill="#8A8E6F"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#565942" strokeWidth="0.85" fill="none" opacity="0.13" strokeLinecap="round">
+              <path d="M 790 20 C 778 80, 775 160, 780 230 C 784 270, 778 320, 772 370" />
+              {/* Slender willow-like olive leaves */}
+              <path d="M 782 60 C 760 52, 750 46, 762 40 C 774 34, 784 48, 782 60 Z" fill="#787352" fillOpacity="0.12" />
+              <path d="M 778 110 C 758 104, 748 98, 758 92 C 768 86, 780 98, 778 110 Z" fill="#787352" fillOpacity="0.12" />
+              <path d="M 778 170 C 756 166, 746 160, 756 154 C 766 148, 780 158, 778 170 Z" fill="#787352" fillOpacity="0.12" />
+              <path d="M 779 230 C 758 226, 748 220, 758 214 C 768 208, 780 218, 779 230 Z" fill="#787352" fillOpacity="0.12" />
+              {/* Subtle dark olive drops */}
+              <ellipse cx="766" cy="116" rx="3.5" ry="5" fill="#3D3A2C" fillOpacity="0.18" stroke="none" />
+              <ellipse cx="764" cy="235" rx="3.5" ry="5" fill="#3D3A2C" fillOpacity="0.18" stroke="none" />
             </g>
           </g>
         )}
 
-        {/* SOMMER 3: Sommerkräuter (Rosmarinzweige & Sommerkräuter als Randgestaltung) */}
+        {/* SOMMER 3: Rosmarin / Sommerkräuter (Zarte Rosmarinnadeln als Randgestaltung) */}
         {motif === 'sommer-kraeuter' && (
           <g>
-            <circle cx="730" cy="80" r="140" fill="url(#su-wash-tr)" />
-            {/* Rosemary sprig */}
-            <g stroke="#755C33" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.26">
-              <path d="M 780 20 C 750 60, 740 130, 750 200" />
-              <path d="M 760 55 L 742 46 M 758 64 L 774 54 M 750 85 L 732 76 M 750 95 L 766 85" />
-              <path d="M 746 120 L 728 112 M 748 130 L 764 122 M 748 155 L 730 148 M 750 165 L 766 158" />
+            <path
+              d="M 720 0 Q 800 30 810 140 Q 740 100 720 0 Z"
+              fill="#B08D5B"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#665034" strokeWidth="0.8" fill="none" opacity="0.13" strokeLinecap="round">
+              <path d="M 794 15 C 776 50, 768 110, 772 170 C 775 210, 768 260, 762 300" />
+              <path d="M 782 45 L 766 38 M 780 55 L 794 48 M 774 85 L 758 78 M 774 95 L 790 88" />
+              <path d="M 770 130 L 754 124 M 771 140 L 787 134 M 770 175 L 754 170 M 770 185 L 786 180" />
             </g>
           </g>
         )}
 
-        {/* SOMMER 4: Sonniges Aquarell (Weiche Aquarellschleier in Honig, Apricot, Pfirsich) */}
+        {/* SOMMER 4: Apricot-Honig-Aquarell (Weiche warme Sonnenschleier) */}
         {motif === 'sommer-aquarell' && (
           <g>
-            <circle cx="730" cy="70" r="190" fill="url(#su-wash-tr)" />
-            <circle cx="70" cy="1050" r="170" fill="url(#su-wash-bl)" />
-            <ellipse cx="700" cy="120" rx="100" ry="70" fill="#E29B38" fillOpacity="0.10" />
-            <ellipse cx="120" cy="1020" rx="90" ry="60" fill="#F5C48A" fillOpacity="0.12" />
+            <path
+              d="M 620 -40 C 710 -20, 810 30, 810 130 C 750 140, 670 70, 620 -40 Z"
+              fill="#E8A65C"
+              opacity="0.08"
+              filter="url(#soft-wash-wide)"
+            />
+            <path
+              d="M -30 1030 C 50 1020, 130 1080, 110 1150 C 40 1150, -20 1100, -30 1030 Z"
+              fill="#E29B38"
+              opacity="0.06"
+              filter="url(#soft-wash-wide)"
+            />
           </g>
         )}
 
-        {/* SOMMER 5: Mediterrane Linien (Feine organische mediterrane Formen & Pflanzenlinien) */}
-        {motif === 'sommer-linien' && (
+        {/* SOMMER 5: Mediterrane botanische Line Art (Organische Konturlinien) */}
+        {motif === 'sommer-line-art' && (
           <g>
-            <g stroke="#B87635" strokeWidth="0.9" fill="none" opacity="0.25">
-              <path d="M 780 20 C 740 40, 720 90, 735 140 C 750 190, 730 240, 715 280" />
-              <path d="M 735 90 C 700 85, 680 110, 695 130 C 715 140, 730 115, 735 90 Z" />
-              <circle cx="704" cy="112" r="16" fill="#F5C48A" fillOpacity="0.18" stroke="none" />
+            <g stroke="#916132" strokeWidth="0.75" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 794 15 C 765 35, 750 75, 755 120 C 760 165, 745 210, 748 260" />
+              <path d="M 764 45 C 748 40, 740 50, 748 60 C 758 70, 768 56, 764 45" />
+              <path d="M 755 120 C 740 115, 734 125, 742 134 C 752 142, 760 130, 755 120" />
+              <circle cx="750" cy="80" r="14" fill="#E8A65C" fillOpacity="0.06" stroke="none" filter="url(#soft-wash-blur)" />
             </g>
           </g>
         )}
@@ -275,79 +277,109 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
             3. HERBST MOTIFE (5 VARIANTEN)
             ════════════════════════════════════════════════════════════ */}
 
-        {/* HERBST 1: Herbstlaub (Stilisierte Herbstblätter in Ocker & Terrakotta) */}
+        {/* HERBST 1: Elegantes Herbstlaub (Feine botanische Herbstblätter in warmem Ocker) */}
         {motif === 'herbst-laub' && (
           <g>
-            <circle cx="730" cy="70" r="160" fill="url(#au-wash-tr)" />
-            <g stroke="#873F18" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.28">
-              <path d="M 785 15 C 750 40, 710 70, 668 85" />
-              {/* Oak / Maple leaf contour */}
+            <path
+              d="M 680 -20 Q 770 10 810 110 Q 750 140 680 -20 Z"
+              fill="#B85829"
+              opacity="0.07"
+              filter="url(#soft-wash-blur)"
+            />
+            <path
+              d="M -20 1040 Q 60 1020 90 1130 Z"
+              fill="#C87B3E"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+
+            {/* Hand-drawn stylized oak/beech leaf contour in upper right corner */}
+            <g stroke="#693014" strokeWidth="0.85" fill="none" opacity="0.14" strokeLinecap="round">
+              <path d="M 794 15 C 770 34, 754 62, 744 92" />
               <path
-                d="M 715 65 C 702 48, 680 52, 674 38 C 668 24, 688 14, 704 20 C 716 26, 726 42, 715 65 Z"
-                fill="#DE8A52"
-                fillOpacity="0.45"
+                d="M 768 36 C 756 22, 742 26, 738 18 C 734 10, 748 4, 760 10 C 770 16, 778 28, 768 36 Z"
+                fill="#C87B3E"
+                fillOpacity="0.13"
               />
               <path
-                d="M 740 38 C 728 26, 712 28, 708 18 C 704 8, 722 4, 734 12 Z"
+                d="M 754 72 C 740 62, 728 66, 724 58 C 720 50, 734 46, 746 50 C 754 54, 762 64, 754 72 Z"
                 fill="#B85829"
-                fillOpacity="0.40"
+                fillOpacity="0.12"
               />
-              <path d="M 698 46 L 710 38 M 692 36 L 704 30" stroke="#873F18" strokeWidth="0.8" />
+              {/* Midrib and subtle leaf veins */}
+              <path d="M 754 22 L 762 16 M 748 30 L 756 24 M 736 60 L 744 54" stroke="#693014" strokeWidth="0.6" />
             </g>
-            {/* Subtle bottom leaf accent */}
-            <g stroke="#873F18" strokeWidth="1" fill="none" opacity="0.22">
-              <path d="M 20 1100 C 45 1080, 80 1070, 110 1065" />
-              <path d="M 80 1075 C 65 1060, 68 1045, 82 1050 C 95 1055, 90 1070, 80 1075 Z" fill="#DE8A52" fillOpacity="0.38" />
+
+            {/* Delicate lower left autumn blade */}
+            <g stroke="#693014" strokeWidth="0.8" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 8 1120 C 26 1098, 42 1076, 48 1050" />
+              <path d="M 26 1100 C 38 1088, 44 1080, 36 1074 C 28 1068, 20 1082, 26 1100 Z" fill="#C87B3E" fillOpacity="0.11" />
             </g>
           </g>
         )}
 
-        {/* HERBST 2: Zweige & getrocknete Blätter (Elegante Zweige & Ähren am Rand) */}
+        {/* HERBST 2: Getrocknete Zweige (Elegante feine Zweige mit getrockneten Blättern) */}
         {motif === 'herbst-zweige' && (
           <g>
-            <circle cx="740" cy="80" r="140" fill="url(#au-wash-tr)" />
-            <g stroke="#7C411E" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.26">
-              <path d="M 770 30 C 758 130, 762 230, 755 330" />
-              <path d="M 764 80 L 748 70 M 762 130 L 744 120 M 760 180 L 742 172 M 758 240 L 740 234" />
-              {/* Small dried leaf drops */}
-              <ellipse cx="744" cy="68" rx="6" ry="3.5" transform="rotate(-30 744 68)" fill="#C87B3E" fillOpacity="0.45" stroke="#7C411E" strokeWidth="0.8" />
-              <ellipse cx="740" cy="118" rx="6" ry="3.5" transform="rotate(-30 740 118)" fill="#C87B3E" fillOpacity="0.45" stroke="#7C411E" strokeWidth="0.8" />
-              <ellipse cx="738" cy="170" rx="6" ry="3.5" transform="rotate(-30 738 170)" fill="#B85829" fillOpacity="0.45" stroke="#7C411E" strokeWidth="0.8" />
+            <path
+              d="M 740 40 Q 820 110 780 240 Q 730 180 740 40 Z"
+              fill="#C87B3E"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#693318" strokeWidth="0.85" fill="none" opacity="0.13" strokeLinecap="round">
+              <path d="M 790 20 C 778 80, 775 160, 780 240 C 784 280, 778 330, 772 380" />
+              <path d="M 782 65 L 766 56 M 778 120 L 762 112 M 778 180 L 762 174 M 779 245 L 763 240" />
+              {/* Dried teardrop leaves */}
+              <path d="M 766 56 C 752 48, 748 56, 756 62 C 764 68, 770 60, 766 56 Z" fill="#965328" fillOpacity="0.12" />
+              <path d="M 762 112 C 748 106, 746 114, 754 118 C 762 122, 768 116, 762 112 Z" fill="#B85829" fillOpacity="0.12" />
+              <path d="M 762 174 C 748 168, 746 176, 754 180 C 762 184, 768 178, 762 174 Z" fill="#965328" fillOpacity="0.12" />
             </g>
           </g>
         )}
 
-        {/* HERBST 3: Goldenes Aquarell (Sanfte Aquarellflächen in Ocker, Beige & Terrakotta) */}
+        {/* HERBST 3: Ocker-Terrakotta-Aquarell (Organische warme Farbflächen) */}
         {motif === 'herbst-aquarell' && (
           <g>
-            <circle cx="730" cy="70" r="190" fill="url(#au-wash-tr)" />
-            <circle cx="70" cy="1050" r="170" fill="url(#au-wash-bl)" />
-            <ellipse cx="710" cy="110" rx="90" ry="60" fill="#DE8A52" fillOpacity="0.10" />
-            <ellipse cx="110" cy="1020" rx="80" ry="50" fill="#B85829" fillOpacity="0.08" />
+            <path
+              d="M 620 -40 C 710 -20, 810 30, 810 130 C 750 140, 670 70, 620 -40 Z"
+              fill="#B85829"
+              opacity="0.07"
+              filter="url(#soft-wash-wide)"
+            />
+            <path
+              d="M -30 1030 C 50 1020, 130 1080, 110 1150 C 40 1150, -20 1100, -30 1030 Z"
+              fill="#C87B3E"
+              opacity="0.06"
+              filter="url(#soft-wash-wide)"
+            />
           </g>
         )}
 
         {/* HERBST 4: Herbst Botanical Line Art (Feine Linienzeichnung von Blättern & Zweigen) */}
         {motif === 'herbst-line-art' && (
           <g>
-            <g stroke="#7C3B18" strokeWidth="0.9" fill="none" opacity="0.26">
-              <path d="M 780 20 C 740 40, 715 80, 680 95 C 650 110, 630 150, 620 190" />
-              <path d="M 715 80 C 695 65, 680 72, 686 52 C 708 58, 722 72, 715 80 Z" />
-              <path d="M 680 95 C 660 85, 646 95, 652 76 C 670 82, 682 92, 680 95 Z" />
-              <circle cx="700" cy="62" r="16" fill="#DE8A52" fillOpacity="0.18" stroke="none" />
-              <circle cx="664" cy="84" r="14" fill="#B85829" fillOpacity="0.16" stroke="none" />
+            <g stroke="#693014" strokeWidth="0.75" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 794 15 C 765 35, 750 70, 748 115 C 746 160, 754 200, 748 245" />
+              <path d="M 764 42 C 748 34, 738 44, 746 54 C 756 62, 768 50, 764 42" />
+              <path d="M 748 115 C 732 108, 726 118, 734 126 C 744 134, 754 122, 748 115" />
+              <circle cx="750" cy="75" r="14" fill="#B85829" fillOpacity="0.06" stroke="none" filter="url(#soft-wash-blur)" />
             </g>
           </g>
         )}
 
-        {/* HERBST 5: Warmes Naturmotiv (Reduzierte Kombination aus Blättern & organischen Formen) */}
+        {/* HERBST 5: Warme organische Naturformen (Asymmetrische sanfte Formen) */}
         {motif === 'herbst-natur' && (
           <g>
-            <circle cx="740" cy="80" r="150" fill="url(#au-wash-tr)" />
-            <g stroke="#873F18" strokeWidth="1" fill="none" opacity="0.25">
-              <path d="M 780 30 C 750 60, 730 110, 740 160" />
-              <circle cx="740" cy="100" r="18" fill="#C87B3E" fillOpacity="0.2" stroke="none" />
-              <circle cx="720" cy="140" r="12" fill="#B85829" fillOpacity="0.18" stroke="none" />
+            <path
+              d="M 700 -20 Q 790 10 810 110 Q 740 140 700 -20 Z"
+              fill="#C87B3E"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#783A1A" strokeWidth="0.8" fill="none" opacity="0.12">
+              <path d="M 790 30 C 768 60, 755 100, 762 145" />
+              <circle cx="760" cy="90" r="10" fill="#DE8A52" fillOpacity="0.08" stroke="none" />
             </g>
           </g>
         )}
@@ -356,70 +388,96 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
             4. WINTER MOTIFE (5 VARIANTEN)
             ════════════════════════════════════════════════════════════ */}
 
-        {/* WINTER 1: Winterzweige (Feine kahle Zweige in Rauchblau & Graublau) */}
+        {/* WINTER 1: Kahle Winterzweige (Feine kahle Zweige mit kleinen Knospen) */}
         {motif === 'winter-zweige' && (
           <g>
-            <circle cx="730" cy="70" r="160" fill="url(#wi-wash-tr)" />
-            <g stroke="#375566" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.28">
-              <path d="M 785 15 C 750 38, 715 68, 672 82" />
-              <path d="M 740 45 L 724 35 M 718 64 L 702 54 M 698 72 L 688 62" />
-              {/* Frosted winter buds */}
-              <circle cx="724" cy="35" r="3.2" fill="#B2D2DE" fillOpacity="0.6" stroke="#375566" strokeWidth="0.8" />
-              <circle cx="702" cy="54" r="3.2" fill="#B2D2DE" fillOpacity="0.6" stroke="#375566" strokeWidth="0.8" />
-              <circle cx="672" cy="82" r="3.2" fill="#B2D2DE" fillOpacity="0.6" stroke="#375566" strokeWidth="0.8" />
+            <path
+              d="M 680 -20 Q 770 10 810 110 Q 750 140 680 -20 Z"
+              fill="#4F7285"
+              opacity="0.07"
+              filter="url(#soft-wash-blur)"
+            />
+            <path
+              d="M -20 1040 Q 60 1020 90 1130 Z"
+              fill="#557B8E"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#2C4857" strokeWidth="0.85" fill="none" opacity="0.14" strokeLinecap="round">
+              <path d="M 794 15 C 772 32, 755 58, 746 88" />
+              <path d="M 770 32 L 754 24 M 756 58 L 742 50 M 748 82 L 738 74" />
+              {/* Frosty little bud dots */}
+              <circle cx="754" cy="24" r="2.2" fill="#B2D2DE" fillOpacity="0.4" stroke="#2C4857" strokeWidth="0.6" />
+              <circle cx="742" cy="50" r="2.2" fill="#B2D2DE" fillOpacity="0.4" stroke="#2C4857" strokeWidth="0.6" />
+              <circle cx="746" cy="88" r="2.2" fill="#B2D2DE" fillOpacity="0.4" stroke="#2C4857" strokeWidth="0.6" />
             </g>
-            {/* Subtle bottom branch */}
-            <g stroke="#375566" strokeWidth="1" fill="none" opacity="0.20">
-              <path d="M 20 1105 C 50 1085, 90 1075, 125 1070" />
-              <circle cx="95" cy="1078" r="2.8" fill="#B2D2DE" fillOpacity="0.5" stroke="#375566" strokeWidth="0.8" />
+            <g stroke="#2C4857" strokeWidth="0.8" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 8 1120 C 26 1098, 42 1076, 48 1050" />
+              <circle cx="48" cy="1050" r="2" fill="#B2D2DE" fillOpacity="0.4" stroke="#2C4857" strokeWidth="0.6" />
             </g>
           </g>
         )}
 
-        {/* WINTER 2: Tannenzweige (Dezente Tannennadeln ohne Deko) */}
+        {/* WINTER 2: Reduzierte Tannenzweige (Dezente Nadelzweige ohne Deko) */}
         {motif === 'winter-tannen' && (
           <g>
-            <circle cx="730" cy="70" r="150" fill="url(#wi-wash-tr)" />
-            <g stroke="#2C4857" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.26">
-              <path d="M 780 20 C 750 50, 720 85, 680 105" />
-              <path d="M 750 48 L 738 38 M 754 42 L 766 32 M 732 70 L 720 60 M 736 64 L 748 54" />
-              <path d="M 714 88 L 702 78 M 718 82 L 730 72 M 696 102 L 684 92 M 700 96 L 712 86" />
+            <path
+              d="M 720 0 Q 800 30 810 140 Q 740 100 720 0 Z"
+              fill="#436173"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#283F4C" strokeWidth="0.8" fill="none" opacity="0.13" strokeLinecap="round">
+              <path d="M 794 20 C 772 45, 758 75, 748 110" />
+              <path d="M 778 38 L 766 30 M 780 42 L 790 32 M 768 56 L 756 48 M 770 60 L 780 50" />
+              <path d="M 758 78 L 746 70 M 760 82 L 770 72 M 750 100 L 738 92 M 752 104 L 762 94" />
             </g>
           </g>
         )}
 
-        {/* WINTER 3: Frostiges Aquarell (Weiche Aquarellflächen in Eisblau & Rauchblau) */}
+        {/* WINTER 3: Eisblau-Rauchblau-Aquarell (Weiche diffuse Winterauren) */}
         {motif === 'winter-aquarell' && (
           <g>
-            <circle cx="730" cy="70" r="190" fill="url(#wi-wash-tr)" />
-            <circle cx="70" cy="1050" r="170" fill="url(#wi-wash-bl)" />
-            <ellipse cx="710" cy="110" rx="90" ry="60" fill="#6B8E9E" fillOpacity="0.10" />
-            <ellipse cx="110" cy="1020" rx="80" ry="50" fill="#4F7285" fillOpacity="0.08" />
+            <path
+              d="M 620 -40 C 710 -20, 810 30, 810 130 C 750 140, 670 70, 620 -40 Z"
+              fill="#557B8E"
+              opacity="0.07"
+              filter="url(#soft-wash-wide)"
+            />
+            <path
+              d="M -30 1030 C 50 1020, 130 1080, 110 1150 C 40 1150, -20 1100, -30 1030 Z"
+              fill="#4F7285"
+              opacity="0.06"
+              filter="url(#soft-wash-wide)"
+            />
           </g>
         )}
 
-        {/* WINTER 4: Nordic Line Art (Minimalistische botanische Line-Art in kühlen Blautönen) */}
+        {/* WINTER 4: Nordic Botanical Line Art (Kühle, minimalistische Konturlinien) */}
         {motif === 'winter-line-art' && (
           <g>
-            <g stroke="#325061" strokeWidth="0.9" fill="none" opacity="0.25">
-              <path d="M 780 15 C 740 35, 715 75, 685 90 C 655 105, 635 145, 625 185" />
-              <circle cx="715" cy="75" r="3" fill="#557B8E" />
-              <circle cx="685" cy="90" r="3" fill="#557B8E" />
-              <circle cx="655" cy="120" r="3" fill="#557B8E" />
-              <circle cx="700" cy="65" r="16" fill="#80A4B5" fillOpacity="0.18" stroke="none" />
+            <g stroke="#2A4554" strokeWidth="0.75" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 794 15 C 765 35, 750 70, 748 115 C 746 160, 754 200, 748 245" />
+              <circle cx="754" cy="45" r="2.2" fill="#557B8E" />
+              <circle cx="748" cy="95" r="2.2" fill="#557B8E" />
+              <circle cx="750" cy="155" r="2.2" fill="#557B8E" />
+              <circle cx="750" cy="70" r="14" fill="#6B8E9E" fillOpacity="0.06" stroke="none" filter="url(#soft-wash-blur)" />
             </g>
           </g>
         )}
 
-        {/* WINTER 5: Eisige organische Formen (Abstrakte weiche Formen in kühler Ruhe) */}
+        {/* WINTER 5: Abstrakte frostige Naturformen (Sehr ruhige weiche Kaltton-Formen) */}
         {motif === 'winter-formen' && (
           <g>
-            <circle cx="730" cy="70" r="160" fill="url(#wi-wash-tr)" />
-            <g stroke="#375566" strokeWidth="0.8" fill="none" opacity="0.22">
-              <polygon points="760,20 780,50 760,80 740,50" />
-              <line x1="760" y1="20" x2="760" y2="80" strokeDasharray="3 3" />
-              <line x1="740" y1="50" x2="780" y2="50" strokeDasharray="3 3" />
-              <circle cx="760" cy="50" r="25" fill="#80A4B5" fillOpacity="0.15" stroke="none" />
+            <path
+              d="M 690 -20 Q 780 10 810 100 Q 750 140 690 -20 Z"
+              fill="#6B8E9E"
+              opacity="0.06"
+              filter="url(#soft-wash-blur)"
+            />
+            <g stroke="#375566" strokeWidth="0.75" fill="none" opacity="0.11">
+              <path d="M 790 25 C 770 50, 758 85, 764 125" />
+              <path d="M 764 125 C 770 165, 758 200, 762 235" strokeDasharray="3 4" />
             </g>
           </g>
         )}
@@ -428,47 +486,62 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
             5. ZEITLOS MOTIFE (5 VARIANTEN)
             ════════════════════════════════════════════════════════════ */}
 
-        {/* ZEITLOS 1: Leinen (Subtile warme Leinenstruktur) */}
+        {/* ZEITLOS 1: Feine Leinenstruktur (Hauchzartes Naturleinen) */}
         {motif === 'zeitlos-leinen' && (
           <g>
-            <rect width="794" height="1123" fill="url(#linen-grid)" />
-            <circle cx="730" cy="70" r="140" fill="url(#ti-wash-tr)" />
+            <rect width="794" height="1123" fill="url(#linen-weave)" />
+            <path
+              d="M 690 -20 Q 780 10 810 100 Q 750 140 690 -20 Z"
+              fill="#8C7B6E"
+              opacity="0.04"
+              filter="url(#soft-wash-blur)"
+            />
           </g>
         )}
 
-        {/* ZEITLOS 2: Organische Linien (Feine abstrakte Linien in Greige & Taupe) */}
+        {/* ZEITLOS 2: Organische Konturlinien (Feine abstrakte Linien in Greige) */}
         {motif === 'zeitlos-linien' && (
           <g>
-            <g stroke="#7A6B5F" strokeWidth="0.8" fill="none" opacity="0.24" strokeDasharray="4 5">
-              <path d="M 780 20 C 750 40, 730 80, 740 120 C 750 160, 770 200, 765 240" />
-              <circle cx="740" cy="120" r="3" fill="#7A6B5F" opacity="0.3" />
+            <g stroke="#6B5C50" strokeWidth="0.75" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 794 20 C 768 45, 752 90, 758 140 C 764 190, 750 240, 754 290" />
+              <circle cx="755" cy="110" r="14" fill="#9C8C7E" fillOpacity="0.05" stroke="none" filter="url(#soft-wash-blur)" />
             </g>
           </g>
         )}
 
-        {/* ZEITLOS 3: Greige Aquarell (Sehr leichte Steinton-Aquarellflächen) */}
+        {/* ZEITLOS 3: Greige-Aquarell (Sehr leichte Steinton-Aura) */}
         {motif === 'zeitlos-aquarell' && (
           <g>
-            <circle cx="730" cy="70" r="180" fill="url(#ti-wash-tr)" />
-            <ellipse cx="700" cy="110" rx="90" ry="60" fill="#9C8C7E" fillOpacity="0.09" />
+            <path
+              d="M 630 -30 C 720 -10, 810 30, 810 130 C 750 130, 670 60, 630 -30 Z"
+              fill="#9C8C7E"
+              opacity="0.06"
+              filter="url(#soft-wash-wide)"
+            />
           </g>
         )}
 
-        {/* ZEITLOS 4: Botanische Kontur (Monochrome botanische Line-Art) */}
+        {/* ZEITLOS 4: Monochrome botanische Kontur (Extrem reduzierte Konturlinie) */}
         {motif === 'zeitlos-kontur' && (
           <g>
-            <g stroke="#6E5F53" strokeWidth="0.9" fill="none" opacity="0.24" strokeLinecap="round">
-              <path d="M 770 30 C 755 110, 750 200, 758 290" />
-              <path d="M 758 90 Q 736 82 730 72 M 756 150 Q 734 142 728 132 M 754 210 Q 732 202 726 192" />
+            <g stroke="#5E5045" strokeWidth="0.75" fill="none" opacity="0.12" strokeLinecap="round">
+              <path d="M 790 20 C 778 80, 775 160, 780 230 C 784 270, 778 320, 772 370" />
+              <path d="M 782 60 C 760 52, 750 46, 762 40" />
+              <path d="M 778 110 C 758 104, 748 98, 758 92" />
+              <path d="M 778 170 C 756 166, 746 160, 756 154" />
             </g>
           </g>
         )}
 
-        {/* ZEITLOS 5: Minimal Paper (Ruhigste Variante: zarte Papierfaser & sanfte Form) */}
+        {/* ZEITLOS 5: Minimal Paper (Ruhigste Variante: zarter Steinton & viel Raum) */}
         {motif === 'zeitlos-paper' && (
           <g>
-            <circle cx="740" cy="70" r="140" fill="url(#ti-wash-tr)" opacity="0.7" />
-            <circle cx="730" cy="80" r="30" fill="#807267" fillOpacity="0.04" />
+            <path
+              d="M 720 -20 Q 790 0 810 80 Q 760 100 720 -20 Z"
+              fill="#807267"
+              opacity="0.03"
+              filter="url(#soft-wash-blur)"
+            />
           </g>
         )}
 
@@ -476,7 +549,6 @@ export const SeasonalBackgroundLayer: React.FC<SeasonalBackgroundLayerProps> = (
             6. NEUTRAL STANDARD (#FFF7F0 ohne Dekoration)
             ════════════════════════════════════════════════════════════ */}
         {motif === 'neutral-clean' && (
-          // Completely pure warm cream paper background
           <rect width="794" height="1123" fill="#FFF7F0" />
         )}
       </svg>

@@ -218,12 +218,12 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
         <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left Column: Settings (5 cols) */}
           <div className="lg:col-span-5 space-y-4 text-xs">
-            {/* Background Strategy Selection */}
+            {/* Foto-Kulisse / Untergrund Auswahl */}
             <div className="bg-[#151210] p-3.5 rounded-xl border border-[#2f2720] space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="text-[#c46637] font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                   <Palette className="w-3.5 h-3.5" />
-                  Kulissen-Hintergrund (§4):
+                  Foto-Kulisse / Untergrund (§4):
                 </label>
               </div>
 
@@ -236,14 +236,14 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                   ✨ Automatisch passend zur Saison ({recipe.season})
                 </option>
                 <option value="zeitlos">
-                  ⚖️ Zeitlos / Neutral (Greige & Sandstein)
+                  ⚖️ Zeitlose Foto-Kulisse (Greige & Sandstein)
                 </option>
                 <option value="none">
-                  ⚪ Kein spezieller Hintergrund (Dezenter Studio-Untergrund)
+                  ⚪ Kein spezieller Kulissen-Hintergrund (Dezenter Studio-Untergrund)
                 </option>
 
                 {seasonBackgrounds.length > 0 && (
-                  <optgroup label={`Eigene Kulissen: ${recipe.season}`}>
+                  <optgroup label={`Eigene Foto-Kulissen: ${recipe.season}`}>
                     {seasonBackgrounds.map(bg => (
                       <option key={bg.id} value={bg.id}>
                         🎨 {bg.name}
@@ -252,7 +252,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                   </optgroup>
                 )}
 
-                <optgroup label="Alle hinterlegten Kulissen">
+                <optgroup label="Alle hinterlegten Foto-Kulissen">
                   {backgrounds
                     .filter(bg => !seasonBackgrounds.some(sb => sb.id === bg.id))
                     .map(bg => (
@@ -266,7 +266,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
               <div className="text-[10px] text-[#8e8074] bg-[#1a1613] p-2 rounded-lg border border-[#2a221b] flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 text-[#c46637] shrink-0 mt-0.5" />
                 <span>
-                  Aktiv: <strong className="text-[#cfc0b2]">{effectiveBgName}</strong>. Licht, Schatten und Geschirr werden harmonisch auf diesen Untergrund abgestimmt.
+                  Aktive Foto-Kulisse: <strong className="text-[#cfc0b2]">{effectiveBgName}</strong>. Licht, Schatten und Geschirr des Food-Fotos werden harmonisch auf diesen Untergrund abgestimmt.
                 </span>
               </div>
             </div>
