@@ -13,7 +13,9 @@ import {
   hydrateRecipeImage,
   deleteRecipeAsset,
   cloneRecipe,
+  cloneAssetForRecipe,
 } from './utils/libraryStorage';
+import { getImageBlobRaw, blobToDataUrl } from './utils/imageStorage';
 import { MasterRecipePage } from './components/MasterRecipePage';
 import { DetailEditor } from './components/DetailEditor';
 import { AssistantInputModal } from './components/AssistantInputModal';
@@ -411,13 +413,24 @@ export default function App() {
     });
   };
 
-  const handleDuplicateRecipe = (recipeToDuplicate: RecipePageData) => {
-    checkDirtyNavigation(() => {
+  const handleDuplicateRecipe = async (recipeToDuplicate: RecipePageData) => {
+    checkDirtyNavigation(async () => {
       const now = new Date().toISOString();
+      const newRecipeId = `recipe-${Date.now()}`;
+      let newPhotoAssetId: string | undefined = undefined;
+
+      if (recipeToDuplicate.photoAssetId) {
+        const clonedAssetId = await cloneAssetForRecipe(recipeToDuplicate.photoAssetId, newRecipeId);
+        if (clonedAssetId) {
+          newPhotoAssetId = clonedAssetId;
+        }
+      }
+
       const duplicate: RecipePageData = {
         ...cloneRecipe(recipeToDuplicate),
-        id: `recipe-${Date.now()}`,
+        id: newRecipeId,
         title: `${recipeToDuplicate.title} (KOPIE)`,
+        photoAssetId: newPhotoAssetId,
         createdAt: now,
         updatedAt: now,
         savedAt: undefined, // bis zum bewussten Speichern nur Draft
@@ -455,7 +468,7 @@ export default function App() {
   const handleApplyBackgroundToSeason = async (season: Season, backgroundId: string) => {
     const now = new Date().toISOString();
     const updated = savedRecipes.map(r =>
-      r.season === season ? { ...r, pageBackgroundId: backgroundId, updatedAt: now } : r
+      r.season === season ? { ...r, pageBackgroundId: backgroundId, savedAt: now, updatedAt: now } : r
     );
     const runtimeList = await persistLibraryRecipes(updated);
     setSavedRecipes(runtimeList);
@@ -487,19 +500,36 @@ export default function App() {
   };
 
   // Export / Import
-  const handleExportJson = () => {
-    const dataStr =
-      'data:text/json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(savedRecipes, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute(
-      'download',
-      `rezepte-bibliothek-${new Date().toISOString().slice(0, 10)}.json`
-    );
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+  const handleExportJson = async () => {
+    try {
+      const exportList: RecipePageData[] = [];
+      for (const recipe of savedRecipes) {
+        const item = cloneRecipe(recipe);
+        if (item.photoAssetId) {
+          const rawBlob = await getImageBlobRaw(item.photoAssetId);
+          if (rawBlob) {
+            item.photoUrl = await blobToDataUrl(rawBlob);
+          }
+        }
+        exportList.push(item);
+      }
+
+      const dataStr =
+        'data:text/json;charset=utf-8,' +
+        encodeURIComponent(JSON.stringify(exportList, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute(
+        'download',
+        `rezepte-bibliothek-${new Date().toISOString().slice(0, 10)}.json`
+      );
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (exportErr) {
+      console.error('Failed to export recipes', exportErr);
+      alert('Fehler beim Exportieren der Rezepte.');
+    }
   };
 
   const handleImportJson = () => {
@@ -532,9 +562,9 @@ export default function App() {
               }
             }
 
-            setSavedRecipes(result.validRecipes);
-            await persistLibraryRecipes(result.validRecipes);
-            setDraftRecipe(cloneRecipe(result.validRecipes[0]));
+            const runtimeRecipes = await persistLibraryRecipes(result.validRecipes);
+            setSavedRecipes(runtimeRecipes);
+            setDraftRecipe(cloneRecipe(runtimeRecipes[0]));
             setIsDirty(false);
           } catch (err) {
             alert('Ungültige JSON-Datei: Die Datei konnte nicht als JSON geparst werden.');
@@ -880,11 +910,21 @@ export default function App() {
       {/* 3. Qualitätsprüfung-Bestätigung vor dem Speichern */}
       <SaveQualityConfirmModal
         isOpen={isSaveQualityConfirmOpen}
-        onClose={() => setIsSaveQualityConfirmOpen(false)}
+        onClose={() => {
+          setIsSaveQualityConfirmOpen(false);
+          // If a pending navigation was waiting, cancel it or keep modal consistent
+        }}
         report={qualityReport}
         onSaveAnyway={async () => {
           setIsSaveQualityConfirmOpen(false);
-          await executeSaveRecipe(draftRecipe);
+          const success = await executeSaveRecipe(draftRecipe);
+          if (success) {
+            setIsUnsavedModalOpen(false);
+            if (pendingNavigationAction) {
+              pendingNavigationAction();
+              setPendingNavigationAction(null);
+            }
+          }
         }}
         onOpenAuditDrawer={() => setIsQualityDrawerOpen(true)}
       />

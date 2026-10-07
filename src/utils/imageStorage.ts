@@ -65,6 +65,13 @@ export function isDataUrl(url?: string): boolean {
 }
 
 /**
+ * Checks whether a given string is a blob URL.
+ */
+export function isBlobUrl(url?: string): boolean {
+  return typeof url === 'string' && url.startsWith('blob:');
+}
+
+/**
  * Saves an image (DataURL or Blob) into IndexedDB.
  * Returns the asset ID.
  */
@@ -123,6 +130,52 @@ export async function getImageBlob(id: string): Promise<string | null> {
     console.warn('Failed to retrieve image from IndexedDB', err);
     return null;
   }
+}
+
+/**
+ * Retrieves the raw Blob object directly from IndexedDB without wrapping in an Object URL.
+ */
+export async function getImageBlobRaw(id: string): Promise<Blob | null> {
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(id);
+
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result && result.blob instanceof Blob) {
+          resolve(result.blob);
+        } else {
+          resolve(null);
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.warn('Failed to retrieve raw image Blob from IndexedDB', err);
+    return null;
+  }
+}
+
+/**
+ * Converts a Blob to a Base64 data URL.
+ */
+export function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to convert Blob to Data URL'));
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 /**
