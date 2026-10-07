@@ -15,7 +15,7 @@ import {
   cloneRecipe,
   cloneAssetForRecipe,
 } from './utils/libraryStorage';
-import { getImageBlobRaw, blobToDataUrl } from './utils/imageStorage';
+import { getImageBlob, getImageBlobRaw, blobToDataUrl } from './utils/imageStorage';
 import { MasterRecipePage } from './components/MasterRecipePage';
 import { DetailEditor } from './components/DetailEditor';
 import { AssistantInputModal } from './components/AssistantInputModal';
