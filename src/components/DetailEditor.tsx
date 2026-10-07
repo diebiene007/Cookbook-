@@ -35,6 +35,7 @@ interface DetailEditorProps {
   onOpenPageMotifSelector?: () => void;
   onOpenBackgroundManager?: () => void;
   onImageVerified?: (verification: ImageVerificationResult) => void;
+  onApplyVerifiedImage?: (newPhotoUrl: string, verification?: ImageVerificationResult) => void;
 }
 
 const QUICK_TAGS_STORAGE_KEY = 'rezepte_durchs_jahr_quick_tags_v1';
@@ -89,6 +90,7 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
   onOpenPageMotifSelector,
   onOpenBackgroundManager,
   onImageVerified,
+  onApplyVerifiedImage,
 }) => {
   const [activeTab, setActiveTab] = useState<
     'basis' | 'blick' | 'zutaten' | 'schritte' | 'naehrwerte' | 'foto'
@@ -1321,9 +1323,13 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
         backgrounds={backgrounds}
         categories={categories}
         onApplyImage={(newPhotoUrl, verification) => {
-          update({ photoUrl: newPhotoUrl });
-          if (verification && onImageVerified) {
-            onImageVerified(verification);
+          if (onApplyVerifiedImage) {
+            onApplyVerifiedImage(newPhotoUrl, verification);
+          } else {
+            update({ photoUrl: newPhotoUrl });
+            if (verification && onImageVerified) {
+              onImageVerified(verification);
+            }
           }
         }}
         onOpenBackgroundManager={onOpenBackgroundManager}

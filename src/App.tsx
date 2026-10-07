@@ -118,15 +118,22 @@ export default function App() {
   // Runtime context for quality audit (DOM overflow measurement, real aspect ratio, AI verification)
   const [auditRuntimeContext, setAuditRuntimeContext] = useState<RuntimeAuditContext>({});
 
-  // Reset image verification and aspect ratio when draft photoUrl changes
+  // Track which exact image (URL or assetId) the current verification belongs to
+  const verifiedImageKeyRef = useRef<string | null>(null);
+
+  // Invalidate image verification and aspect ratio when photoUrl or photoAssetId changes outside atomic apply
   useEffect(() => {
-    setAuditRuntimeContext(prev => ({
-      ...prev,
-      photoAspectRatio: undefined,
-      imageVerified: undefined,
-      imageVerificationDetails: undefined,
-    }));
-  }, [draftRecipe.photoUrl]);
+    const currentKey = draftRecipe.photoAssetId || draftRecipe.photoUrl;
+    if (verifiedImageKeyRef.current !== currentKey) {
+      verifiedImageKeyRef.current = null;
+      setAuditRuntimeContext(prev => ({
+        ...prev,
+        photoAspectRatio: undefined,
+        imageVerified: undefined,
+        imageVerificationDetails: undefined,
+      }));
+    }
+  }, [draftRecipe.photoUrl, draftRecipe.photoAssetId]);
 
   // Measure actual A4 Master Page DOM overflow
   useEffect(() => {
@@ -364,6 +371,39 @@ export default function App() {
   const handleUpdateDraft = (updated: RecipePageData) => {
     setDraftRecipe(updated);
     setIsDirty(true);
+  };
+
+  // Atomic flow to apply newly generated/verified image without effect race conditions
+  const handleApplyVerifiedImage = (
+    newPhotoUrl: string,
+    verification?: ImageVerificationResult
+  ) => {
+    const updatedRecipe: RecipePageData = {
+      ...draftRecipe,
+      photoUrl: newPhotoUrl,
+    };
+    // Track that the new image key is legitimate and should retain its verification
+    verifiedImageKeyRef.current = updatedRecipe.photoAssetId || newPhotoUrl;
+
+    setDraftRecipe(updatedRecipe);
+    setIsDirty(true);
+
+    if (verification) {
+      setAuditRuntimeContext(prev => ({
+        ...prev,
+        imageVerified: true,
+        imageVerificationDetails: {
+          matchesRecipe: verification.matchesRecipe,
+          containsTextOrLogo: verification.containsTextOrLogo,
+        },
+      }));
+    } else {
+      setAuditRuntimeContext(prev => ({
+        ...prev,
+        imageVerified: undefined,
+        imageVerificationDetails: undefined,
+      }));
+    }
   };
 
   // ─── BIBLIOTHEK-AKTIONEN ────────────────────────────────────
@@ -794,16 +834,7 @@ export default function App() {
                 categories={backgroundCategories}
                 onOpenPageMotifSelector={() => setIsPageMotifSelectorOpen(true)}
                 onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
-                onImageVerified={(verification) => {
-                  setAuditRuntimeContext(prev => ({
-                    ...prev,
-                    imageVerified: true,
-                    imageVerificationDetails: {
-                      matchesRecipe: verification.matchesRecipe,
-                      containsTextOrLogo: verification.containsTextOrLogo,
-                    },
-                  }));
-                }}
+                onApplyVerifiedImage={handleApplyVerifiedImage}
               />
             )}
 

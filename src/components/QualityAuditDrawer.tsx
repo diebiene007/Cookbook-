@@ -42,7 +42,7 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
 
   const handleFixAll = () => {
     let updated = currentRecipe;
-    const fixableItems = report.items.filter(i => !i.passed && i.canAutoFix && i.autoFixAction);
+    const fixableItems = report.items.filter(i => i.status === 'failed' && i.canAutoFix && i.autoFixAction);
     for (const item of fixableItems) {
       if (item.autoFixAction) {
         updated = autoFixRecipe(updated, item.autoFixAction);
@@ -59,7 +59,7 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
   });
 
   const categories = Array.from(new Set(report.items.map(i => i.category)));
-  const fixableCount = report.items.filter(i => !i.passed && i.canAutoFix).length;
+  const fixableCount = report.items.filter(i => i.status === 'failed' && i.canAutoFix).length;
 
   return (
     <div className="fixed inset-y-0 right-0 w-[420px] bg-[#1d1916] text-[#ded3c8] border-l border-[#342d25] shadow-2xl z-50 flex flex-col select-none animate-in slide-in-from-right duration-200">
@@ -67,10 +67,18 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
       <div className="p-5 border-b border-[#312a23] flex items-center justify-between bg-[#241e1a]">
         <div>
           <h3 className="font-editorial-serif font-bold text-sm tracking-wider uppercase text-[#f5eee6]">
-            Locked Template Qualitätsaudit
+            {report.failedCount === 0 && report.uncheckedCount === 0
+              ? 'Druckfertig'
+              : report.failedCount > 0
+              ? 'Abweichungen gefunden'
+              : 'Prüfung noch nicht vollständig'}
           </h3>
           <p className="text-[11px] text-[#9c8e82]">
-            Verbindliche Buchkriterien (§1–§15)
+            {report.failedCount === 0 && report.uncheckedCount === 0
+              ? 'Alle verbindlichen Buchkriterien (§1–§15) erfüllt'
+              : report.failedCount > 0
+              ? `${report.failedCount} ${report.failedCount === 1 ? 'Abweichung' : 'Abweichungen'} zu korrigieren`
+              : `${report.uncheckedCount} ${report.uncheckedCount === 1 ? 'Kriterium' : 'Kriterien'} noch ungeprüft`}
           </p>
         </div>
 
@@ -88,15 +96,29 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
           <div className="h-1.5 bg-[#2d2620] rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                report.isReadyForPublish ? 'bg-emerald-500' : 'bg-[#c46637]'
+                report.failedCount === 0 && report.uncheckedCount === 0
+                  ? 'bg-emerald-500'
+                  : report.failedCount > 0
+                  ? 'bg-rose-500'
+                  : 'bg-amber-500'
               }`}
               style={{ width: `${(report.passedCount / report.totalCount) * 100}%` }}
             />
           </div>
           <div className="text-[10px] text-[#8e8074] mt-1 flex justify-between">
             <span>Status ({report.passedCount}/{report.totalCount} erfüllt)</span>
-            <span className={report.isReadyForPublish ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
-              {report.isReadyForPublish ? '100% Druckfertig' : `${Math.round((report.passedCount / report.totalCount) * 100)}%`}
+            <span
+              className={
+                report.failedCount === 0 && report.uncheckedCount === 0
+                  ? 'text-emerald-400 font-semibold'
+                  : report.failedCount > 0
+                  ? 'text-rose-400 font-semibold'
+                  : 'text-amber-400 font-semibold'
+              }
+            >
+              {report.failedCount === 0 && report.uncheckedCount === 0
+                ? '100% Druckfertig'
+                : `${Math.round((report.passedCount / report.totalCount) * 100)}% (${report.passedCount}/${report.totalCount})`}
             </span>
           </div>
         </div>

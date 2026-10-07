@@ -670,9 +670,17 @@ app.post('/api/verify-recipe-image', async (req, res) => {
       base64Data = buffer.toString('base64');
       mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
     } else {
-      // Local workspace asset (e.g., /src/assets/... or src/assets/...)
+      // Local workspace asset: strictly restricted to src/assets/images/
       const cleanedPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+      const allowedDir = path.resolve(__dirname, 'src/assets/images');
       const localFilePath = path.resolve(__dirname, cleanedPath);
+
+      if (!localFilePath.startsWith(allowedDir)) {
+        return res.status(403).json({
+          error: 'Zugriff verweigert: Nur Bilder aus dem Verzeichnis src/assets/images/ sind zulässig.',
+        });
+      }
+
       if (!fs.existsSync(localFilePath)) {
         throw new Error(`Lokales Bild nicht gefunden unter: ${imageUrl}`);
       }
@@ -688,14 +696,28 @@ app.post('/api/verify-recipe-image', async (req, res) => {
       throw new Error('Bilddaten konnten nicht ermittelt werden.');
     }
 
+    // Build ingredients and steps from real RecipePageData structure
+    const leftIngredients = (recipe?.columnLeft?.groups || [])
+      .flatMap((g: any) => (g.items || []).map((i: any) => `${i.amount ? i.amount.trim() + ' ' : ''}${i.name || ''}`))
+      .filter(Boolean);
+    const rightIngredients = (recipe?.columnRight?.groups || [])
+      .flatMap((g: any) => (g.items || []).map((i: any) => `${i.amount ? i.amount.trim() + ' ' : ''}${i.name || ''}`))
+      .filter(Boolean);
+    const allIngredientsList = [...leftIngredients, ...rightIngredients].join(', ') || 'Keine Zutatenliste übergeben';
+
+    const stepsList = (recipe?.steps || [])
+      .map((s: any, idx: number) => `${idx + 1}. ${s.title ? s.title + ': ' : ''}${s.text || ''}`)
+      .join('\n') || 'Keine Zubereitungsschritte angegeben';
+
     const prompt = `Analysiere dieses Food-Foto für ein deutsches Buchprojekt („Rezepte durchs Jahr“).
 Rezept:
 Titel: ${recipe?.title || 'Unbekannt'}
 Jahreszeit: ${recipe?.season || 'Zeitlos'}
 Kategorie: ${recipe?.category || 'Hauptgerichte'}
 Tags: ${recipe?.tags?.join(', ') || ''}
-Zutaten: ${recipe?.ingredientsSummary || 'Keine Zutatenliste übergeben'}
-Zubereitungsschritte: ${recipe?.stepsSummary || ''}
+Zutaten: ${allIngredientsList}
+Zubereitungsschritte:
+${stepsList}
 
 Aufgabe:
 1. Prüfe, ob das Bild kulinarisch plausibel das beschriebene Gericht darstellt.
@@ -756,7 +778,44 @@ Aufgabe:
       },
     });
 
-    const verification = JSON.parse(response.text || '{}');
+    let rawParsed: any;
+    try {
+      rawParsed = JSON.parse(response.text || '{}');
+    } catch (parseErr) {
+      console.error('Failed to parse Gemini response JSON:', response.text);
+      return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung.' });
+    }
+
+    // Runtime validation of model response
+    const rawScore = Number(rawParsed.fidelityScore);
+    if (!Number.isFinite(rawScore)) {
+      return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung: fidelityScore fehlt oder ist ungültig.' });
+    }
+    const fidelityScore = Math.max(0, Math.min(100, Math.round(rawScore)));
+
+    if (typeof rawParsed.matchesRecipe !== 'boolean' || typeof rawParsed.containsTextOrLogo !== 'boolean') {
+      return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung: Booleans fehlen.' });
+    }
+
+    const unexpectedVisibleIngredients = Array.isArray(rawParsed.unexpectedVisibleIngredients)
+      ? rawParsed.unexpectedVisibleIngredients.filter((x: any) => typeof x === 'string')
+      : [];
+    const missingKeyComponents = Array.isArray(rawParsed.missingKeyComponents)
+      ? rawParsed.missingKeyComponents.filter((x: any) => typeof x === 'string')
+      : [];
+    const notes = Array.isArray(rawParsed.notes)
+      ? rawParsed.notes.filter((x: any) => typeof x === 'string')
+      : [];
+
+    const verification = {
+      fidelityScore,
+      matchesRecipe: rawParsed.matchesRecipe,
+      unexpectedVisibleIngredients,
+      missingKeyComponents,
+      containsTextOrLogo: rawParsed.containsTextOrLogo,
+      notes,
+    };
+
     return res.json({ success: true, verification });
   } catch (err: any) {
     console.error('Error in /api/verify-recipe-image:', err);

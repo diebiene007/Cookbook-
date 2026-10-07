@@ -65,6 +65,8 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
 
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<ImageVerificationResult | null>(null);
+  const [verifiedImageUrl, setVerifiedImageUrl] = useState<string | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   // Filter backgrounds matching this season or general
   const seasonBackgrounds = backgrounds.filter(
@@ -158,10 +160,17 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
         throw new Error(data.error || 'Fehler beim Generieren des Bildes.');
       }
 
-      setGeneratedImageUrl(data.imageUrl);
+      const newImageUrl = data.imageUrl;
+      setGeneratedImageUrl(newImageUrl);
       setAnalysisData(data.analysis || null);
       setActiveCompareTab('generated');
+      // Reset any previous verification
       setVerificationResult(null);
+      setVerifiedImageUrl(null);
+      setVerificationError(null);
+
+      // Automatic multimodal verification immediately following generation
+      verifyImage(newImageUrl);
     } catch (err: any) {
       console.error('Error generating recipe image:', err);
       setErrorMsg(err.message || 'Die Bildgenerierung konnte nicht abgeschlossen werden.');
@@ -177,35 +186,18 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
   const currentDisplayedUrl =
     activeCompareTab === 'generated' ? generatedImageUrl : recipe.photoUrl;
 
-  const handleVerifyCurrentImage = async () => {
-    if (!currentDisplayedUrl) return;
+  // Central verify function sending full RecipePageData
+  const verifyImage = async (targetUrl: string): Promise<ImageVerificationResult | null> => {
+    if (!targetUrl) return null;
     setIsVerifying(true);
-    setErrorMsg(null);
+    setVerificationError(null);
     try {
-      const leftSummary =
-        recipe.columnLeft?.groups
-          ?.flatMap(g => g.items?.map(i => `${i.amount ? i.amount + ' ' : ''}${i.name}`))
-          .join(', ') || '';
-      const rightSummary =
-        recipe.columnRight?.groups
-          ?.flatMap(g => g.items?.map(i => `${i.amount ? i.amount + ' ' : ''}${i.name}`))
-          .join(', ') || '';
-      const ingredientsSummary = [leftSummary, rightSummary].filter(Boolean).join('; ');
-      const stepsSummary = recipe.steps?.map((s, i) => `${i + 1}. ${s.title}: ${s.text}`).join(' ') || '';
-
       const res = await fetch('/api/verify-recipe-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageUrl: currentDisplayedUrl,
-          recipe: {
-            title: recipe.title,
-            season: recipe.season,
-            category: recipe.category,
-            tags: recipe.tags,
-            ingredientsSummary,
-            stepsSummary,
-          },
+          imageUrl: targetUrl,
+          recipe,
         }),
       });
 
@@ -215,17 +207,33 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
       }
 
       setVerificationResult(data.verification);
+      setVerifiedImageUrl(targetUrl);
+      return data.verification;
     } catch (err: any) {
       console.error('Error verifying recipe image:', err);
-      setErrorMsg(err.message || 'Die Bildprüfung konnte nicht durchgeführt werden.');
+      setVerificationError(
+        'Bild wurde erzeugt, die zusätzliche KI-Bildprüfung konnte jedoch nicht abgeschlossen werden.'
+      );
+      setVerificationResult(null);
+      setVerifiedImageUrl(null);
+      return null;
     } finally {
       setIsVerifying(false);
     }
   };
 
+  const handleManualVerify = () => {
+    if (currentDisplayedUrl) {
+      verifyImage(currentDisplayedUrl);
+    }
+  };
+
   const handleApply = () => {
     if (generatedImageUrl) {
-      onApplyImage(generatedImageUrl, verificationResult || undefined);
+      // Only attach verification if it was verified strictly for this exact generatedImageUrl
+      const applicableVerification =
+        verifiedImageUrl === generatedImageUrl ? verificationResult || undefined : undefined;
+      onApplyImage(generatedImageUrl, applicableVerification);
       onClose();
     }
   };
@@ -428,7 +436,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                   <button
                     type="button"
                     disabled={isVerifying}
-                    onClick={handleVerifyCurrentImage}
+                    onClick={handleManualVerify}
                     className="px-2.5 py-1 rounded-lg bg-[#27211b] hover:bg-[#342b23] border border-[#3b3127] text-[10.5px] text-[#ded3c8] hover:text-white font-medium flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {isVerifying ? (
@@ -439,13 +447,22 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                     ) : (
                       <>
                         <Sparkles className="w-3 h-3 text-[#c46637]" />
-                        <span>Jetzt visuell prüfen</span>
+                        <span>{verifiedImageUrl === currentDisplayedUrl ? 'Erneut prüfen' : 'Jetzt visuell prüfen'}</span>
                       </>
                     )}
                   </button>
                 </div>
 
-                {verificationResult ? (
+                {isVerifying ? (
+                  <div className="p-2.5 rounded-lg bg-[#1e1915] border border-[#342a22] flex items-center gap-2 text-[10.5px] text-[#baa99b]">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#c46637]" />
+                    <span>Bild erstellt · Rezepttreue wird geprüft …</span>
+                  </div>
+                ) : verificationError ? (
+                  <div className="p-2 rounded-lg bg-rose-950/30 border border-rose-900/40 text-[10.5px] text-rose-300">
+                    {verificationError}
+                  </div>
+                ) : verificationResult && verifiedImageUrl === currentDisplayedUrl ? (
                   <div className="space-y-2 text-[10.5px]">
                     <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1915] border border-[#342a22]">
                       <span className="text-[#baa99b]">Kulinarischer Treuescore:</span>
@@ -572,7 +589,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                         {loadingStage}
                       </p>
                       <p className="text-[10px] text-[#786c62]">
-                        100 % Rezepttreue · Jahreszeit: {recipe.season}
+                        Auf Rezepttreue optimiert · Jahreszeit: {recipe.season}
                       </p>
                     </div>
                   </div>
@@ -646,7 +663,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                       disabled={isLoading}
                       onClick={() => runGeneration(true)}
                       className="px-3.5 py-2 rounded-xl bg-[#241e19] hover:bg-[#342b23] border border-[#3b3127] text-[#f5eee6] font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
-                      title="Variiert Kamerawinkel, Anordnung und Lichtwinkel bei 100% Rezepttreue"
+                      title="Variiert Kamerawinkel, Anordnung und Licht – Rezepttreue bleibt priorisiert"
                     >
                       <Dices className="w-3.5 h-3.5 text-[#d97d4f]" />
                       Variante erstellen

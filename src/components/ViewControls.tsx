@@ -163,18 +163,26 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
         <button
           onClick={onOpenQualityDrawer}
           className={`px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-colors cursor-pointer ${
-            qualityReport.isReadyForPublish
+            qualityReport.failedCount === 0 && qualityReport.uncheckedCount === 0
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+              : qualityReport.failedCount > 0
+              ? 'bg-rose-500/10 border-rose-500/30 text-rose-300 hover:bg-rose-500/20'
               : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
           }`}
         >
-          {qualityReport.isReadyForPublish ? (
+          {qualityReport.failedCount === 0 && qualityReport.uncheckedCount === 0 ? (
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          ) : qualityReport.failedCount > 0 ? (
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
           ) : (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
           )}
           <span className="font-semibold text-[11px]">
-            {qualityReport.passedCount}/{qualityReport.totalCount} Prüfung
+            {qualityReport.failedCount === 0 && qualityReport.uncheckedCount === 0
+              ? `${qualityReport.passedCount}/${qualityReport.totalCount} geprüft`
+              : qualityReport.failedCount === 0
+              ? `${qualityReport.passedCount}/${qualityReport.totalCount} geprüft · ${qualityReport.uncheckedCount} offen`
+              : `${qualityReport.passedCount}/${qualityReport.totalCount} · ${qualityReport.failedCount} ${qualityReport.failedCount === 1 ? 'Fehler' : 'Fehler'}`}
           </span>
         </button>
       </div>

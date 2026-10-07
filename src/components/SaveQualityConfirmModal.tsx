@@ -19,7 +19,8 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
 }) => {
   if (!isOpen) return null;
 
-  const unpassedItems = report.items.filter(i => i.status !== 'passed');
+  const failedItems = report.items.filter(i => i.status === 'failed');
+  const uncheckedItems = report.items.filter(i => i.status === 'unchecked');
   const failureCount = report.failedCount;
   const uncheckedCount = report.uncheckedCount;
 
@@ -32,15 +33,23 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
       >
         {/* Header */}
         <div className="p-5 border-b border-[#2d251e] flex items-start gap-3 bg-[#191513]">
-          <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+          <div
+            className={`p-2.5 rounded-xl border shrink-0 ${
+              failureCount > 0
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+            }`}
+          >
             <AlertCircle className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-[#f5eee6] tracking-wide">
-              Redaktionelle Hinweise vor dem Speichern
+              {failureCount > 0
+                ? 'Redaktionelle Hinweise vor dem Speichern'
+                : 'Die Qualitätsprüfung ist noch nicht vollständig'}
             </h3>
             <p className="text-xs text-amber-300/90 mt-0.5">
-              {failureCount > 0 && `${failureCount} ${failureCount === 1 ? 'Fehler' : 'Fehler'}`}
+              {failureCount > 0 && `${failureCount} ${failureCount === 1 ? 'Abweichung' : 'Abweichungen'}`}
               {failureCount > 0 && uncheckedCount > 0 && ' · '}
               {uncheckedCount > 0 && `${uncheckedCount} noch ungeprüft`}
             </p>
@@ -53,38 +62,45 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
           </button>
         </div>
 
-        {/* Failed items preview */}
-        <div className="p-5 space-y-3 max-h-60 overflow-y-auto">
-          <p className="text-xs text-[#a09083]">
-            Für die perfekte Buchveröffentlichung (§1–§15) sollten folgende Punkte beachtet werden:
-          </p>
-          <div className="space-y-1.5">
-            {unpassedItems.slice(0, 5).map(item => (
-              <div
-                key={item.id}
-                className="p-2 rounded-lg bg-[#161311] border border-[#2d241d] text-[11px] text-[#ded3c8] flex items-start gap-2"
-              >
-                <div className="flex items-center gap-1 mt-0.5 shrink-0">
-                  <span className="text-amber-400 font-mono text-[10px]">§{item.number}</span>
-                  {item.status === 'unchecked' ? (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                      Ungeprüft
-                    </span>
-                  ) : (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">
-                      Fehler
-                    </span>
-                  )}
+        {/* Failed & Unchecked items preview */}
+        <div className="p-5 space-y-3.5 max-h-64 overflow-y-auto">
+          {failureCount > 0 ? (
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 block">
+                Abweichungen ({failureCount}):
+              </span>
+              {failedItems.slice(0, 4).map(item => (
+                <div
+                  key={item.id}
+                  className="p-2 rounded-lg bg-[#191210] border border-rose-950/60 text-[11px] text-[#ded3c8] flex items-start gap-2"
+                >
+                  <span className="text-rose-400 font-mono text-[10px] mt-0.5 shrink-0">§{item.number}</span>
+                  <span className="flex-1 leading-snug">{item.message}</span>
                 </div>
-                <span className="flex-1 leading-snug">{item.message}</span>
-              </div>
-            ))}
-            {unpassedItems.length > 5 && (
-              <div className="text-[10px] text-[#8e8074] text-center pt-1">
-                + {unpassedItems.length - 5} weitere Hinweise in der Qualitätsprüfung
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-[#a09083]">
+              Es wurden keine Regelverstöße festgestellt. Für die druckfertige Freigabe (§1–§15) stehen noch Verifizierungen aus:
+            </p>
+          )}
+
+          {uncheckedCount > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300/90 block">
+                Noch ungeprüft ({uncheckedCount}):
+              </span>
+              {uncheckedItems.slice(0, 3).map(item => (
+                <div
+                  key={item.id}
+                  className="p-2 rounded-lg bg-[#161311] border border-amber-950/40 text-[11px] text-[#baa99b] flex items-start gap-2"
+                >
+                  <span className="text-amber-400/80 font-mono text-[10px] mt-0.5 shrink-0">§{item.number}</span>
+                  <span className="flex-1 leading-snug">{item.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

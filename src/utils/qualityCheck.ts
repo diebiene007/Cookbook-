@@ -91,7 +91,12 @@ export function runQualityAudit(
   );
 
   // 3. Rezepttitel korrekt?
-  const titleValid = !!recipe.title && recipe.title.trim().length >= 3 && !recipe.title.includes('[REZEPT');
+  const normalizedTitle = (recipe.title || '').trim();
+  const titleValid =
+    normalizedTitle.length >= 3 &&
+    !normalizedTitle.includes('[REZEPT') &&
+    normalizedTitle === normalizedTitle.toUpperCase();
+
   items.push(
     createItem({
       id: 'check-3-title',
@@ -102,7 +107,7 @@ export function runQualityAudit(
       passed: titleValid,
       message: titleValid
         ? `Titel: „${recipe.title}“ ist editorial konform.`
-        : 'Fehler: Titel fehlt oder enthält Platzhalter.',
+        : 'Titel fehlt, enthält einen Platzhalter oder ist nicht vollständig in Großbuchstaben.',
       canAutoFix: true,
       autoFixAction: 'UPPERCASE_TITLE',
     })
@@ -127,18 +132,29 @@ export function runQualityAudit(
 
   // 5. Exakt 4 Tags?
   const tagCount = recipe.tags.length;
-  const tagsValid = tagCount === 4 && recipe.tags.every(t => t.trim().length > 0);
+  const genericTagPlaceholders = ['TAG 1', 'TAG 2', 'TAG 3', 'TAG 4', 'TAG1', 'TAG2', 'TAG3', 'TAG4'];
+  const tagsValid =
+    tagCount === 4 &&
+    recipe.tags.every(tag => {
+      const clean = tag.trim();
+      return (
+        clean.length > 0 &&
+        clean === clean.toUpperCase() &&
+        !genericTagPlaceholders.includes(clean)
+      );
+    });
+
   items.push(
     createItem({
       id: 'check-5-tags',
       number: 5,
       label: 'Exakt 4 Tags vorhanden?',
-      rule: 'Weder 3 noch 5 Tags, sondern exakt 4 Tags in GROSSBUCHSTABEN.',
+      rule: 'Weder 3 noch 5 Tags, sondern exakt 4 Tags in GROSSBUCHSTABEN ohne Platzhalter.',
       category: 'Metadaten',
       passed: tagsValid,
       message: tagsValid
         ? `Exakt 4 Tags vorhanden: ${recipe.tags.join(', ')}.`
-        : `Abweichung: Es sind aktuell ${tagCount} Tags hinterlegt (erforderlich: exakt 4).`,
+        : `Abweichung: Exakt 4 gültige Tags in Großbuchstaben erforderlich (aktuell: ${recipe.tags.join(', ') || 'keine'}).`,
       canAutoFix: true,
       autoFixAction: 'NORMALIZE_TAGS',
     })
@@ -171,7 +187,8 @@ export function runQualityAudit(
   const qf = recipe.quickFacts;
   const qfComplete =
     !!qf.portions &&
-    qf.activeTimeMin > 0 &&
+    qf.activeTimeMin >= 0 &&
+    qf.passiveTimeMin >= 0 &&
     qf.totalTimeMin > 0 &&
     !!qf.utensils &&
     qf.utensils.trim().length > 0;
@@ -185,23 +202,29 @@ export function runQualityAudit(
       passed: qfComplete,
       message: qfComplete
         ? 'Alle 4 Quick-Facts vollständig erfasst.'
-        : 'Lücke in den Quick-Facts: Bitte alle 4 Felder ausfüllen.',
+        : 'Lücke in den Quick-Facts: Bitte alle Felder mit gültigen Werten ausfüllen.',
     })
   );
 
   // 8. Gesamtzeit = Aktivzeit + Passivzeit Plausibilität
-  const timeConsistent = qf.totalTimeMin >= qf.activeTimeMin;
+  const timeConsistent =
+    qf.activeTimeMin >= 0 &&
+    qf.passiveTimeMin >= 0 &&
+    qf.totalTimeMin > 0 &&
+    qf.totalTimeMin >= qf.activeTimeMin &&
+    qf.totalTimeMin >= qf.passiveTimeMin;
+
   items.push(
     createItem({
       id: 'check-8-time-calc',
       number: 8,
       label: 'Zeiten rechnerisch plausibel?',
-      rule: 'Gesamtzeit darf nicht kleiner als die Aktivzeit sein.',
+      rule: 'Gesamtzeit darf nicht kleiner als die Aktiv- oder Passivzeit sein.',
       category: 'Auf einen Blick',
       passed: timeConsistent,
       message: timeConsistent
-        ? `Zeiten plausibel (${qf.activeTimeMin} Min aktiv, ${qf.totalTimeMin} Min gesamt).`
-        : 'Unplausibel: Gesamtzeit ist kleiner als Aktivzeit!',
+        ? `Zeiten plausibel (${qf.activeTimeMin} Min aktiv, ${qf.passiveTimeMin} Min passiv, ${qf.totalTimeMin} Min gesamt).`
+        : 'Unplausibel: Gesamtzeit ist kleiner als Aktivzeit oder Passivzeit!',
     })
   );
 
