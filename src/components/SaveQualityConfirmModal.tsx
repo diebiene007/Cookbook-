@@ -4,7 +4,7 @@ import { QualityReport } from '../types/recipe';
 
 interface SaveQualityConfirmModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onCancel: () => void;
   report: QualityReport;
   onSaveAnyway: () => void;
   onOpenAuditDrawer: () => void;
@@ -12,7 +12,7 @@ interface SaveQualityConfirmModalProps {
 
 export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = ({
   isOpen,
-  onClose,
+  onCancel,
   report,
   onSaveAnyway,
   onOpenAuditDrawer,
@@ -43,7 +43,7 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={onCancel}
             className="p-1 rounded-lg text-[#8e8074] hover:text-[#f5eee6] hover:bg-[#2b241e] transition-colors"
           >
             <X className="w-4 h-4" />
@@ -78,10 +78,7 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
           {/* Open Audit Drawer */}
           <button
             type="button"
-            onClick={() => {
-              onClose();
-              onOpenAuditDrawer();
-            }}
+            onClick={onOpenAuditDrawer}
             className="w-full py-2.5 px-4 rounded-xl bg-[#c46637] hover:bg-[#d6723e] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-md shadow-[#c46637]/20 transition-all cursor-pointer"
           >
             <span>Qualitätsprüfung öffnen</span>
@@ -101,7 +98,7 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
             {/* Cancel */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={onCancel}
               className="py-2 px-3 rounded-xl bg-[#26201b] hover:bg-[#342b23] border border-[#3b3026] text-[#8e8074] hover:text-[#ded3c8] font-medium text-xs flex items-center justify-center transition-colors cursor-pointer"
             >
               Abbrechen

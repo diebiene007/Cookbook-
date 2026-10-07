@@ -426,10 +426,19 @@ export default function App() {
         }
       }
 
+      let hydratedPhotoUrl = recipeToDuplicate.photoUrl;
+      if (newPhotoAssetId) {
+        const runtimeBlobUrl = await getImageBlob(newPhotoAssetId);
+        if (runtimeBlobUrl) {
+          hydratedPhotoUrl = runtimeBlobUrl;
+        }
+      }
+
       const duplicate: RecipePageData = {
         ...cloneRecipe(recipeToDuplicate),
         id: newRecipeId,
         title: `${recipeToDuplicate.title} (KOPIE)`,
+        photoUrl: hydratedPhotoUrl,
         photoAssetId: newPhotoAssetId,
         createdAt: now,
         updatedAt: now,
@@ -910,9 +919,10 @@ export default function App() {
       {/* 3. Qualitätsprüfung-Bestätigung vor dem Speichern */}
       <SaveQualityConfirmModal
         isOpen={isSaveQualityConfirmOpen}
-        onClose={() => {
+        onCancel={() => {
           setIsSaveQualityConfirmOpen(false);
-          // If a pending navigation was waiting, cancel it or keep modal consistent
+          setIsUnsavedModalOpen(false);
+          setPendingNavigationAction(null);
         }}
         report={qualityReport}
         onSaveAnyway={async () => {
@@ -926,7 +936,10 @@ export default function App() {
             }
           }
         }}
-        onOpenAuditDrawer={() => setIsQualityDrawerOpen(true)}
+        onOpenAuditDrawer={() => {
+          setIsSaveQualityConfirmOpen(false);
+          setIsQualityDrawerOpen(true);
+        }}
       />
 
       {/* 4. Assistent Input Modal */}
