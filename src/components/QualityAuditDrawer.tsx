@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { QualityReport, QualityCheckItem, RecipePageData } from '../types/recipe';
-import { CheckCircle2, AlertTriangle, Sparkles, Filter, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Sparkles, Filter, ChevronDown, ChevronRight, X, HelpCircle } from 'lucide-react';
 import { autoFixRecipe } from '../utils/qualityCheck';
 
 interface QualityAuditDrawerProps {
@@ -18,7 +18,7 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
   currentRecipe,
   onUpdateRecipe,
 }) => {
-  const [filterMode, setFilterMode] = useState<'all' | 'failed' | 'passed'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'failed' | 'unchecked' | 'passed'>('all');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     Masterlayout: true,
     Metadaten: true,
@@ -41,51 +41,37 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
   };
 
   const handleFixAll = () => {
-    let rec = { ...currentRecipe };
-    report.items.forEach(item => {
-      if (!item.passed && item.canAutoFix && item.autoFixAction) {
-        rec = autoFixRecipe(rec, item.autoFixAction);
+    let updated = currentRecipe;
+    const fixableItems = report.items.filter(i => !i.passed && i.canAutoFix && i.autoFixAction);
+    for (const item of fixableItems) {
+      if (item.autoFixAction) {
+        updated = autoFixRecipe(updated, item.autoFixAction);
       }
-    });
-    onUpdateRecipe(rec);
+    }
+    onUpdateRecipe(updated);
   };
 
-  const categories = Array.from(new Set(report.items.map(i => i.category)));
-
   const filteredItems = report.items.filter(item => {
-    if (filterMode === 'failed') return !item.passed;
-    if (filterMode === 'passed') return item.passed;
+    if (filterMode === 'failed') return item.status === 'failed';
+    if (filterMode === 'unchecked') return item.status === 'unchecked';
+    if (filterMode === 'passed') return item.status === 'passed';
     return true;
   });
 
+  const categories = Array.from(new Set(report.items.map(i => i.category)));
   const fixableCount = report.items.filter(i => !i.passed && i.canAutoFix).length;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#1d1a17] text-[#e8ded5] border-l border-[#3a322a] shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-y-0 right-0 w-[420px] bg-[#1d1916] text-[#ded3c8] border-l border-[#342d25] shadow-2xl z-50 flex flex-col select-none animate-in slide-in-from-right duration-200">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-[#312a23] bg-[#24201c] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-              report.isReadyForPublish
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-            }`}
-          >
-            {report.isReadyForPublish ? (
-              <CheckCircle2 className="w-4 h-4" />
-            ) : (
-              <AlertTriangle className="w-4 h-4" />
-            )}
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-[#f5eee6] font-editorial-sans">
-              Qualitätskontrolle (§16)
-            </h3>
-            <p className="text-[11px] text-[#9c8e82]">
-              {report.passedCount} von {report.totalCount} Kriterien erfüllt
-            </p>
-          </div>
+      <div className="p-5 border-b border-[#312a23] flex items-center justify-between bg-[#241e1a]">
+        <div>
+          <h3 className="font-editorial-serif font-bold text-sm tracking-wider uppercase text-[#f5eee6]">
+            Locked Template Qualitätsaudit
+          </h3>
+          <p className="text-[11px] text-[#9c8e82]">
+            Verbindliche Buchkriterien (§1–§15)
+          </p>
         </div>
 
         <button
@@ -108,7 +94,7 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
             />
           </div>
           <div className="text-[10px] text-[#8e8074] mt-1 flex justify-between">
-            <span>Locked Template Status</span>
+            <span>Status ({report.passedCount}/{report.totalCount} erfüllt)</span>
             <span className={report.isReadyForPublish ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
               {report.isReadyForPublish ? '100% Druckfertig' : `${Math.round((report.passedCount / report.totalCount) * 100)}%`}
             </span>
@@ -118,7 +104,7 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
         {fixableCount > 0 && (
           <button
             onClick={handleFixAll}
-            className="px-2.5 py-1.5 rounded-lg bg-[#c46637] hover:bg-[#d6723e] text-white text-[11px] font-medium flex items-center gap-1.5 shrink-0 transition-colors"
+            className="px-2.5 py-1.5 rounded-lg bg-[#c46637] hover:bg-[#d6723e] text-white text-[11px] font-medium flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3" />
             Alle {fixableCount} beheben
@@ -127,11 +113,11 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
       </div>
 
       {/* Filter Tabs */}
-      <div className="px-5 py-2 border-b border-[#312a23] flex items-center gap-2 text-xs">
-        <Filter className="w-3 h-3 text-[#8e8074]" />
+      <div className="px-4 py-2 border-b border-[#312a23] flex items-center gap-1 text-xs overflow-x-auto">
+        <Filter className="w-3 h-3 text-[#8e8074] shrink-0 mr-1" />
         <button
           onClick={() => setFilterMode('all')}
-          className={`px-2 py-0.5 rounded text-[11px] ${
+          className={`px-2 py-0.5 rounded text-[10.5px] shrink-0 transition-colors ${
             filterMode === 'all'
               ? 'bg-[#3b3229] text-[#f5eee6] font-semibold'
               : 'text-[#8e8074] hover:text-[#e8ded5]'
@@ -141,17 +127,27 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
         </button>
         <button
           onClick={() => setFilterMode('failed')}
-          className={`px-2 py-0.5 rounded text-[11px] ${
+          className={`px-2 py-0.5 rounded text-[10.5px] shrink-0 transition-colors ${
             filterMode === 'failed'
+              ? 'bg-rose-500/20 text-rose-300 font-semibold'
+              : 'text-[#8e8074] hover:text-[#e8ded5]'
+          }`}
+        >
+          Fehler ({report.failedCount})
+        </button>
+        <button
+          onClick={() => setFilterMode('unchecked')}
+          className={`px-2 py-0.5 rounded text-[10.5px] shrink-0 transition-colors ${
+            filterMode === 'unchecked'
               ? 'bg-amber-500/20 text-amber-300 font-semibold'
               : 'text-[#8e8074] hover:text-[#e8ded5]'
           }`}
         >
-          Abweichungen ({report.totalCount - report.passedCount})
+          Ungeprüft ({report.uncheckedCount})
         </button>
         <button
           onClick={() => setFilterMode('passed')}
-          className={`px-2 py-0.5 rounded text-[11px] ${
+          className={`px-2 py-0.5 rounded text-[10.5px] shrink-0 transition-colors ${
             filterMode === 'passed'
               ? 'bg-emerald-500/20 text-emerald-300 font-semibold'
               : 'text-[#8e8074] hover:text-[#e8ded5]'
@@ -177,7 +173,7 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
                 <span>{cat}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-[#8e8074]">
-                    {itemsInCat.filter(i => i.passed).length}/{itemsInCat.length}
+                    {itemsInCat.filter(i => i.status === 'passed').length}/{itemsInCat.length}
                   </span>
                   {isExpanded ? (
                     <ChevronDown className="w-3.5 h-3.5 text-[#8e8074]" />
@@ -193,25 +189,34 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
                     <div key={item.id} className="p-3 space-y-1 text-xs">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2">
-                          {item.passed ? (
+                          {item.status === 'passed' ? (
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                          ) : item.status === 'failed' ? (
+                            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                           ) : (
-                            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                            <HelpCircle className="w-4 h-4 text-amber-400/70 shrink-0 mt-0.5" />
                           )}
                           <div>
-                            <span className="font-semibold text-[#f0e7df] block text-[11.5px]">
-                              {item.number}. {item.label}
-                            </span>
-                            <span className="text-[10.5px] text-[#9e8f83] block">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-[#f0e7df] text-[11.5px]">
+                                {item.number}. {item.label}
+                              </span>
+                              {item.status === 'unchecked' && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium">
+                                  Ungeprüft
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10.5px] text-[#9e8f83] block mt-0.5">
                               {item.message}
                             </span>
                           </div>
                         </div>
 
-                        {!item.passed && item.canAutoFix && item.autoFixAction && (
+                        {item.status === 'failed' && item.canAutoFix && item.autoFixAction && (
                           <button
                             onClick={() => handleAutoFix(item.autoFixAction!)}
-                            className="px-2 py-1 rounded bg-[#3b3127] hover:bg-[#c46637] text-white text-[10px] font-medium transition-colors shrink-0"
+                            className="px-2 py-1 rounded bg-[#3b3127] hover:bg-[#c46637] text-white text-[10px] font-medium transition-colors shrink-0 cursor-pointer"
                           >
                             Beheben
                           </button>
@@ -224,19 +229,6 @@ export const QualityAuditDrawer: React.FC<QualityAuditDrawerProps> = ({
             </div>
           );
         })}
-      </div>
-
-      {/* Drawer Footer */}
-      <div className="p-4 border-t border-[#312a23] bg-[#24201c] text-center text-xs text-[#9e8f83]">
-        {report.isReadyForPublish ? (
-          <span className="text-emerald-400 font-medium">
-            ✓ Alle 26 Qualitätskriterien erfüllt. Seite entspricht 100% der Mastervorlage.
-          </span>
-        ) : (
-          <span className="text-amber-400">
-            Bitte verbleibende Abweichungen korrigieren, bevor die Seite freigegeben wird.
-          </span>
-        )}
       </div>
     </div>
   );

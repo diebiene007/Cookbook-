@@ -13,6 +13,9 @@ import {
   Upload,
   Layers,
   Palette,
+  Save,
+  BookOpen,
+  Check,
 } from 'lucide-react';
 import { QualityReport } from '../types/recipe';
 
@@ -30,6 +33,12 @@ interface ViewControlsProps {
   onImportJson: () => void;
   onOpenPageMotifSelector?: () => void;
   activeMotifName?: string;
+  onOpenLibrary: () => void;
+  savedRecipesCount?: number;
+  onSaveRecipe: () => void;
+  isDirty: boolean;
+  savedAt?: string;
+  isSaving?: boolean;
 }
 
 export const ViewControls: React.FC<ViewControlsProps> = ({
@@ -46,23 +55,94 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
   onImportJson,
   onOpenPageMotifSelector,
   activeMotifName,
+  onOpenLibrary,
+  savedRecipesCount = 0,
+  onSaveRecipe,
+  isDirty,
+  savedAt,
+  isSaving = false,
 }) => {
   const handlePrint = () => {
     window.print();
   };
 
+  const formattedSaveTime = (() => {
+    if (!savedAt) return null;
+    try {
+      const d = new Date(savedAt);
+      return `Zuletzt: ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <div className="no-print bg-[#1a1715]/95 backdrop-blur-md border-b border-[#342d25] px-4 py-2.5 flex items-center justify-between gap-3 text-xs z-30 sticky top-0">
-      {/* Left: Quick Actions & Assistant */}
-      <div className="flex items-center gap-2">
+      {/* Left: Library, Save, Assistant & Quick Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* 1. Hauptbutton Rezeptbibliothek */}
         <button
-          onClick={onOpenAssistantModal}
-          className="px-3.5 py-1.5 rounded-lg bg-[#c46637] hover:bg-[#d6723e] text-white font-medium flex items-center gap-2 shadow-md shadow-[#c46637]/20 transition-all cursor-pointer"
+          onClick={onOpenLibrary}
+          className="px-3.5 py-1.5 rounded-lg bg-[#241e1a] hover:bg-[#342b23] border border-[#3e3328] hover:border-[#c46637] text-[#ded3c8] hover:text-[#f5eee6] flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+          title="Gespeicherte Rezeptbibliothek öffnen"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Neues Rezept analysieren</span>
+          <BookOpen className="w-3.5 h-3.5 text-[#c46637]" />
+          <span className="font-semibold text-xs">Rezeptbibliothek</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#181513] text-[#baa99b] border border-white/5 font-mono">
+            {savedRecipesCount}
+          </span>
         </button>
 
+        {/* 2. Gut sichtbarer Button: Rezept speichern & Dirty State Indicator */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onSaveRecipe}
+            disabled={isSaving}
+            className={`px-3.5 py-1.5 rounded-lg font-semibold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer ${
+              isDirty
+                ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30 ring-1 ring-amber-400/50'
+                : 'bg-[#27221d] hover:bg-[#342d25] text-[#ded3c8] border border-[#3d342b]'
+            }`}
+            title="Aktuellen Arbeitsstand in der Bibliothek speichern"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>Rezept speichern</span>
+          </button>
+
+          {/* Dirty Status Badge */}
+          <div
+            className={`hidden md:flex items-center gap-1.5 text-[10.5px] px-2 py-1 rounded-lg border ${
+              isDirty
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isDirty ? 'bg-amber-400' : 'bg-emerald-400'
+              }`}
+            />
+            <span className="font-medium">
+              {isDirty ? 'Ungespeicherte Änderungen' : '✓ Gespeichert'}
+            </span>
+            {!isDirty && formattedSaveTime && (
+              <span className="text-[9.5px] text-[#8e8074] hidden xl:inline">
+                ({formattedSaveTime})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Assistant */}
+        <button
+          onClick={onOpenAssistantModal}
+          className="px-3 py-1.5 rounded-lg bg-[#27221d] hover:bg-[#342d25] border border-[#3d342b] text-[#ded3c8] hover:text-[#f5eee6] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-[#c46637]" />
+          <span className="hidden lg:inline">Assistent</span>
+        </button>
+
+        {/* 4. Seitenmotiv Button */}
         {onOpenPageMotifSelector && (
           <button
             onClick={onOpenPageMotifSelector}
@@ -79,6 +159,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           </button>
         )}
 
+        {/* 5. Qualitätsprüfung Drawer */}
         <button
           onClick={onOpenQualityDrawer}
           className={`px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-colors cursor-pointer ${
@@ -94,9 +175,6 @@ export const ViewControls: React.FC<ViewControlsProps> = ({
           )}
           <span className="font-semibold text-[11px]">
             {qualityReport.passedCount}/{qualityReport.totalCount} Prüfung
-          </span>
-          <span className="hidden md:inline text-[10px] opacity-80">
-            {qualityReport.isReadyForPublish ? '· Fertig' : '· Abweichung'}
           </span>
         </button>
       </div>

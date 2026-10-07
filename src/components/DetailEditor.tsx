@@ -182,14 +182,14 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
       setSelectedTagIndex(null);
     } else {
       // Wenn kein Tag ausgewählt ist: Erste leere Position füllen
-      const emptyIndex = current.findIndex(t => !t || t.trim() === '' || t.startsWith('TAG'));
+      const emptyIndex = current.findIndex(t => !t || t.trim() === '');
       if (emptyIndex !== -1) {
         current[emptyIndex] = tag;
         update({ tags: current });
+        setTagError(null);
       } else {
-        // Fallback: Wenn alle 4 belegt sind und keiner ausgewählt ist, den 4. Tag ersetzen
-        current[3] = tag;
-        update({ tags: current });
+        // Alle vier Tags belegt UND kein Tag ausgewählt: Nichts verändern und Hinweis anzeigen
+        setTagError('Bitte zuerst einen der vier Tags auswählen, den du ersetzen möchtest.');
       }
     }
   };

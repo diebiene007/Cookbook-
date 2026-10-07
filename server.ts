@@ -531,14 +531,25 @@ REGELN:
             dishName: { type: Type.STRING },
             visualSummary: { type: Type.STRING },
             visibleIngredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+            transformedTextures: { type: Type.STRING, description: 'Texturveränderungen durch Garen, Braten, Backen, Mixen' },
             chosenPerspective: { type: Type.STRING },
+            tablewareAndProps: { type: Type.STRING, description: 'Passendes Geschirr, Schalen und Untergrund-Props' },
             lightingAndMood: { type: Type.STRING },
             finalPhotoPrompt: {
               type: Type.STRING,
               description: 'Detailreicher englischer Bildprompt für High-End Food Photography, 1:1, photorealistic, zero text, zero watermark',
             },
           },
-          required: ['dishName', 'visualSummary', 'visibleIngredients', 'chosenPerspective', 'lightingAndMood', 'finalPhotoPrompt'],
+          required: [
+            'dishName',
+            'visualSummary',
+            'visibleIngredients',
+            'transformedTextures',
+            'chosenPerspective',
+            'tablewareAndProps',
+            'lightingAndMood',
+            'finalPhotoPrompt',
+          ],
         },
       },
     });
@@ -621,6 +632,103 @@ REGELN:
     return res.status(500).json({
       error: err.message || 'Fehler bei der Bildgenerierung.',
     });
+  }
+});
+
+// API endpoint to verify food photo against recipe using multimodal Gemini 3.8 Flash
+app.post('/api/verify-recipe-image', async (req, res) => {
+  const { recipe, imageUrl } = req.body;
+
+  if (!aiClient) {
+    return res.status(400).json({
+      error: 'Kein GEMINI_API_KEY konfiguriert.',
+    });
+  }
+
+  if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.startsWith('data:image/')) {
+    return res.status(400).json({
+      error: 'Gültiges Base64-Bild (Data-URL) erforderlich.',
+    });
+  }
+
+  try {
+    const parts = imageUrl.split(';base64,');
+    const mimeType = parts[0].split(':')[1] || 'image/png';
+    const base64Data = parts[1];
+
+    const prompt = `Analysiere dieses Food-Foto für ein deutsches Buchprojekt („Rezepte durchs Jahr“).
+Rezept:
+Titel: ${recipe?.title || 'Unbekannt'}
+Jahreszeit: ${recipe?.season || 'Zeitlos'}
+Kategorie: ${recipe?.category || 'Hauptgerichte'}
+Tags: ${recipe?.tags?.join(', ') || ''}
+Zutaten: ${recipe?.ingredientsSummary || 'Keine Zutatenliste übergeben'}
+Zubereitungsschritte: ${recipe?.stepsSummary || ''}
+
+Aufgabe:
+1. Prüfe, ob das Bild kulinarisch plausibel das beschriebene Gericht darstellt.
+2. Prüfe, ob sichtbare Zutaten im Bild vorkommen, die im Rezept gar nicht existieren (z. B. willkürliche Beeren, Petersilie auf asiatischem Gericht, Fleisch bei vegetarisch).
+3. Prüfe, ob wesentliche Hauptkomponenten des Rezepts im Bild fehlen.
+4. Prüfe, ob sichtbare Buchstaben, Schriften, Wörter, Labels, Logos oder Wasserzeichen im Bild vorhanden sind (muss strikt vermieden werden!).
+5. Berechne einen realistischen 'fidelityScore' von 0 bis 100 für die kulinarische Rezepttreue (keine willkürliche 100% Garantie, sondern eine ehrliche Einschätzung).`;
+
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType,
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            fidelityScore: { type: Type.INTEGER, description: 'Score von 0 bis 100' },
+            matchesRecipe: { type: Type.BOOLEAN },
+            unexpectedVisibleIngredients: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: 'Zutaten, die im Bild zu sehen sind, aber nicht im Rezept stehen',
+            },
+            missingKeyComponents: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: 'Hauptkomponenten des Rezepts, die im Bild nicht erkennbar sind',
+            },
+            containsTextOrLogo: { type: Type.BOOLEAN, description: 'Enthält das Bild Buchstaben, Text oder Logos?' },
+            notes: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: 'Prägnante redaktionelle Beobachtungen auf Deutsch',
+            },
+          },
+          required: [
+            'fidelityScore',
+            'matchesRecipe',
+            'unexpectedVisibleIngredients',
+            'missingKeyComponents',
+            'containsTextOrLogo',
+            'notes',
+          ],
+        },
+      },
+    });
+
+    const verification = JSON.parse(response.text || '{}');
+    return res.json({ success: true, verification });
+  } catch (err: any) {
+    console.error('Error in /api/verify-recipe-image:', err);
+    return res.status(500).json({ error: err.message || 'Fehler bei der Bildprüfung.' });
   }
 });
 

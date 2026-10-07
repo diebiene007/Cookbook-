@@ -68,9 +68,13 @@ export interface RecipePageData {
   source?: string;
   footerText: string;
   notes?: string;
+  photoAssetId?: string;
   createdAt?: string;
   updatedAt?: string;
+  savedAt?: string;
 }
+
+export type QualityCheckStatus = 'passed' | 'failed' | 'unchecked';
 
 export interface QualityCheckItem {
   id: string;
@@ -78,7 +82,8 @@ export interface QualityCheckItem {
   label: string;
   rule: string;
   category: 'Masterlayout' | 'Metadaten' | 'Auf einen Blick' | 'Zutaten' | 'Zubereitung' | 'Nährwerte & Tipps' | 'Foto & Finish';
-  passed: boolean;
+  status: QualityCheckStatus;
+  passed: boolean; // status === 'passed'
   message: string;
   canAutoFix?: boolean;
   autoFixAction?: string;
@@ -87,6 +92,8 @@ export interface QualityCheckItem {
 export interface QualityReport {
   items: QualityCheckItem[];
   passedCount: number;
+  uncheckedCount: number;
+  failedCount: number;
   totalCount: number;
   isReadyForPublish: boolean;
 }

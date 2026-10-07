@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RecipePageData, Season, Category } from '../types/recipe';
 import { Sparkles, Wand2, BookOpen, AlertCircle, CheckCircle2, ArrowRight, Loader2, X } from 'lucide-react';
 import { DEFAULT_RECIPES } from '../data/defaultRecipes';
+import { normalizeRecipeData } from '../utils/normalizeRecipe';
 
 interface AssistantInputModalProps {
   isOpen: boolean;
@@ -44,45 +45,8 @@ export const AssistantInputModal: React.FC<AssistantInputModalProps> = ({
 
       const data = await res.json();
       if (data.recipe) {
-        // Complete default fields if missing
-        const completeRecipe: RecipePageData = {
-          id: `recipe-${Date.now()}`,
-          title: (data.recipe.title || 'NEUES GERICHT').toUpperCase(),
-          season: (data.recipe.season || 'Zeitlos') as Season,
-          category: (data.recipe.category || 'Hauptgerichte') as Category,
-          tags: (Array.isArray(data.recipe.tags) && data.recipe.tags.length === 4
-            ? data.recipe.tags.map((t: string) => t.toUpperCase())
-            : ['SCHNELL', 'MEAL PREP', 'HIGH PROTEIN', 'HERZHAFT']) as [string, string, string, string],
-          photoUrl: DEFAULT_RECIPES[0].photoUrl,
-          quickFacts: {
-            portions: data.recipe.quickFacts?.portions || '2 Portionen',
-            activeTimeMin: Number(data.recipe.quickFacts?.activeTimeMin) || 15,
-            passiveTimeMin: Number(data.recipe.quickFacts?.passiveTimeMin) || 15,
-            totalTimeMin: Number(data.recipe.quickFacts?.totalTimeMin) || 30,
-            utensils: data.recipe.quickFacts?.utensils || 'Pfanne, Schneidebrett, Messer',
-          },
-          columnLeft: data.recipe.columnLeft || { groups: [] },
-          columnRight: data.recipe.columnRight || { groups: [] },
-          steps: (data.recipe.steps || []).map((s: any, idx: number) => ({
-            id: s.id || `s-${idx}`,
-            stepNumber: s.stepNumber || idx + 1,
-            title: (s.title || `SCHRITT ${idx + 1}`).toUpperCase(),
-            text: s.text || '',
-          })),
-          masterVariant: (data.recipe.masterVariant || 6) as 6 | 8 | 10 | 12,
-          nutrition: {
-            calories: Number(data.recipe.nutrition?.calories) || 450,
-            carbs: Number(data.recipe.nutrition?.carbs) || 40,
-            protein: Number(data.recipe.nutrition?.protein) || 35,
-            fat: Number(data.recipe.nutrition?.fat) || 15,
-          },
-          watchOutTip:
-            data.recipe.watchOutTip ||
-            'Garpunkt genau überwachen, damit die Textur saftig und zart bleibt.',
-          source: data.recipe.source || '',
-          footerText: 'REZEPTE DURCHS JAHR',
-        };
-
+        // Fully normalize recipe data with unique IDs and clean structure
+        const completeRecipe = normalizeRecipeData(data.recipe);
         setAnalysisResult(completeRecipe);
         setSourceNote(data.sourceNote || 'Analyse erfolgreich abgeschlossen');
       } else {
