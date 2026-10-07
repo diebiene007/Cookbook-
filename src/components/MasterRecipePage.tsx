@@ -1,23 +1,25 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { RecipePageData } from '../types/recipe';
 import { CustomBackground } from '../types/backgrounds';
 import { Clock, Users, UtensilsCrossed, AlertCircle, Sparkles } from 'lucide-react';
 import { getSeasonTagStyle } from '../utils/seasonTagTheme';
 import { SeasonalBackgroundLayer } from './SeasonalBackgroundLayer';
 
-interface MasterRecipePageProps {
+export interface MasterRecipePageProps {
   recipe: RecipePageData;
   scale?: number;
   highlightBoxes?: boolean;
   background?: CustomBackground;
+  onImageAspectRatioLoad?: (ratio: number) => void;
 }
 
-export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
+export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps>(({
   recipe,
   scale = 1,
   highlightBoxes = false,
   background,
-}) => {
+  onImageAspectRatioLoad,
+}, ref) => {
   const {
     title,
     season,
@@ -75,6 +77,7 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
 
   return (
     <div
+      ref={ref}
       id="master-a4-page"
       className="print-page-target bg-[#FFF7F0] text-[#241E1A] relative flex flex-col justify-between overflow-hidden shadow-2xl transition-transform origin-top select-text"
       style={{
@@ -149,6 +152,13 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
                 alt={photoAlt || title}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-center"
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth && img.naturalHeight) {
+                    const ratio = img.naturalWidth / img.naturalHeight;
+                    onImageAspectRatioLoad?.(ratio);
+                  }
+                }}
               />
             ) : (
               <div
@@ -391,4 +401,6 @@ export const MasterRecipePage: React.FC<MasterRecipePageProps> = ({
       </footer>
     </div>
   );
-};
+});
+
+MasterRecipePage.displayName = 'MasterRecipePage';

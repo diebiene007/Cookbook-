@@ -89,6 +89,15 @@ export interface QualityCheckItem {
   autoFixAction?: string;
 }
 
+export interface ImageVerificationResult {
+  fidelityScore: number;
+  matchesRecipe: boolean;
+  unexpectedVisibleIngredients: string[];
+  missingKeyComponents: string[];
+  containsTextOrLogo: boolean;
+  notes: string[];
+}
+
 export interface QualityReport {
   items: QualityCheckItem[];
   passedCount: number;

@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -645,16 +646,47 @@ app.post('/api/verify-recipe-image', async (req, res) => {
     });
   }
 
-  if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.startsWith('data:image/')) {
+  if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.trim()) {
     return res.status(400).json({
-      error: 'Gültiges Base64-Bild (Data-URL) erforderlich.',
+      error: 'Gültige Bild-URL oder Data-URL erforderlich.',
     });
   }
 
   try {
-    const parts = imageUrl.split(';base64,');
-    const mimeType = parts[0].split(':')[1] || 'image/png';
-    const base64Data = parts[1];
+    let mimeType = 'image/png';
+    let base64Data = '';
+
+    if (imageUrl.startsWith('data:image/')) {
+      const parts = imageUrl.split(';base64,');
+      mimeType = parts[0].split(':')[1] || 'image/png';
+      base64Data = parts[1];
+    } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) {
+        throw new Error(`Konnte externes Bild nicht laden (HTTP ${imgRes.status})`);
+      }
+      const arrayBuffer = await imgRes.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      base64Data = buffer.toString('base64');
+      mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+    } else {
+      // Local workspace asset (e.g., /src/assets/... or src/assets/...)
+      const cleanedPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+      const localFilePath = path.resolve(__dirname, cleanedPath);
+      if (!fs.existsSync(localFilePath)) {
+        throw new Error(`Lokales Bild nicht gefunden unter: ${imageUrl}`);
+      }
+      const buffer = fs.readFileSync(localFilePath);
+      base64Data = buffer.toString('base64');
+      const ext = path.extname(localFilePath).toLowerCase();
+      if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+      else if (ext === '.webp') mimeType = 'image/webp';
+      else mimeType = 'image/png';
+    }
+
+    if (!base64Data) {
+      throw new Error('Bilddaten konnten nicht ermittelt werden.');
+    }
 
     const prompt = `Analysiere dieses Food-Foto für ein deutsches Buchprojekt („Rezepte durchs Jahr“).
 Rezept:

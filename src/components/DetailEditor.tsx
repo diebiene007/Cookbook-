@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RecipePageData, Season, Category, MasterVariant, IngredientGroup } from '../types/recipe';
+import { RecipePageData, Season, Category, MasterVariant, IngredientGroup, ImageVerificationResult } from '../types/recipe';
 import { BackgroundCategory, CustomBackground } from '../types/backgrounds';
 import { RecipeImageGeneratorModal } from './RecipeImageGeneratorModal';
 import { getSeasonTagStyle, SeasonTag } from '../utils/seasonTagTheme';
@@ -34,6 +34,7 @@ interface DetailEditorProps {
   categories?: BackgroundCategory[];
   onOpenPageMotifSelector?: () => void;
   onOpenBackgroundManager?: () => void;
+  onImageVerified?: (verification: ImageVerificationResult) => void;
 }
 
 const QUICK_TAGS_STORAGE_KEY = 'rezepte_durchs_jahr_quick_tags_v1';
@@ -87,6 +88,7 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
   categories = [],
   onOpenPageMotifSelector,
   onOpenBackgroundManager,
+  onImageVerified,
 }) => {
   const [activeTab, setActiveTab] = useState<
     'basis' | 'blick' | 'zutaten' | 'schritte' | 'naehrwerte' | 'foto'
@@ -1318,7 +1320,12 @@ export const DetailEditor: React.FC<DetailEditorProps> = ({
         recipe={recipe}
         backgrounds={backgrounds}
         categories={categories}
-        onApplyImage={(newPhotoUrl) => update({ photoUrl: newPhotoUrl })}
+        onApplyImage={(newPhotoUrl, verification) => {
+          update({ photoUrl: newPhotoUrl });
+          if (verification && onImageVerified) {
+            onImageVerified(verification);
+          }
+        }}
         onOpenBackgroundManager={onOpenBackgroundManager}
       />
     </div>

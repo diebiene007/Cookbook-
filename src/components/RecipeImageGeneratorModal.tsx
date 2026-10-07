@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { RecipePageData, ImageVerificationResult } from '../types/recipe';
+import { CustomBackground, BackgroundCategory } from '../types/backgrounds';
 import {
   Sparkles,
   RefreshCw,
@@ -15,9 +17,10 @@ import {
   Sun,
   Palette,
   Info,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
-import { RecipePageData } from '../types/recipe';
-import { CustomBackground, BackgroundCategory } from '../types/backgrounds';
 
 interface RecipeImageGeneratorModalProps {
   isOpen: boolean;
@@ -25,7 +28,7 @@ interface RecipeImageGeneratorModalProps {
   recipe: RecipePageData;
   backgrounds: CustomBackground[];
   categories: BackgroundCategory[];
-  onApplyImage: (imageUrl: string) => void;
+  onApplyImage: (imageUrl: string, verification?: ImageVerificationResult) => void;
   onOpenBackgroundManager?: () => void;
 }
 
@@ -59,6 +62,9 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [activeCompareTab, setActiveCompareTab] = useState<'generated' | 'current'>('generated');
+
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verificationResult, setVerificationResult] = useState<ImageVerificationResult | null>(null);
 
   // Filter backgrounds matching this season or general
   const seasonBackgrounds = backgrounds.filter(
@@ -155,6 +161,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
       setGeneratedImageUrl(data.imageUrl);
       setAnalysisData(data.analysis || null);
       setActiveCompareTab('generated');
+      setVerificationResult(null);
     } catch (err: any) {
       console.error('Error generating recipe image:', err);
       setErrorMsg(err.message || 'Die Bildgenerierung konnte nicht abgeschlossen werden.');
@@ -167,9 +174,58 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
     }
   };
 
+  const currentDisplayedUrl =
+    activeCompareTab === 'generated' ? generatedImageUrl : recipe.photoUrl;
+
+  const handleVerifyCurrentImage = async () => {
+    if (!currentDisplayedUrl) return;
+    setIsVerifying(true);
+    setErrorMsg(null);
+    try {
+      const leftSummary =
+        recipe.columnLeft?.groups
+          ?.flatMap(g => g.items?.map(i => `${i.amount ? i.amount + ' ' : ''}${i.name}`))
+          .join(', ') || '';
+      const rightSummary =
+        recipe.columnRight?.groups
+          ?.flatMap(g => g.items?.map(i => `${i.amount ? i.amount + ' ' : ''}${i.name}`))
+          .join(', ') || '';
+      const ingredientsSummary = [leftSummary, rightSummary].filter(Boolean).join('; ');
+      const stepsSummary = recipe.steps?.map((s, i) => `${i + 1}. ${s.title}: ${s.text}`).join(' ') || '';
+
+      const res = await fetch('/api/verify-recipe-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: currentDisplayedUrl,
+          recipe: {
+            title: recipe.title,
+            season: recipe.season,
+            category: recipe.category,
+            tags: recipe.tags,
+            ingredientsSummary,
+            stepsSummary,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Fehler bei der Bildprüfung.');
+      }
+
+      setVerificationResult(data.verification);
+    } catch (err: any) {
+      console.error('Error verifying recipe image:', err);
+      setErrorMsg(err.message || 'Die Bildprüfung konnte nicht durchgeführt werden.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleApply = () => {
     if (generatedImageUrl) {
-      onApplyImage(generatedImageUrl);
+      onApplyImage(generatedImageUrl, verificationResult || undefined);
       onClose();
     }
   };
@@ -357,6 +413,99 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
                       </div>
                     )}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Multimodal AI Recipe-Fidelity Verification Card */}
+            {currentDisplayedUrl && (
+              <div className="bg-[#161311] rounded-xl border border-[#2e261f] p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#d97d4f] flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    KI-Rezepttreueprüfung (§13 &amp; §14)
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isVerifying}
+                    onClick={handleVerifyCurrentImage}
+                    className="px-2.5 py-1 rounded-lg bg-[#27211b] hover:bg-[#342b23] border border-[#3b3127] text-[10.5px] text-[#ded3c8] hover:text-white font-medium flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin text-[#c46637]" />
+                        <span>Prüfe...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3 text-[#c46637]" />
+                        <span>Jetzt visuell prüfen</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {verificationResult ? (
+                  <div className="space-y-2 text-[10.5px]">
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-[#1e1915] border border-[#342a22]">
+                      <span className="text-[#baa99b]">Kulinarischer Treuescore:</span>
+                      <span
+                        className={`font-mono font-bold text-xs ${
+                          verificationResult.fidelityScore >= 80
+                            ? 'text-emerald-400'
+                            : verificationResult.fidelityScore >= 60
+                            ? 'text-amber-400'
+                            : 'text-rose-400'
+                        }`}
+                      >
+                        {verificationResult.fidelityScore} / 100
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        {verificationResult.matchesRecipe ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                        )}
+                        <span className={verificationResult.matchesRecipe ? 'text-[#ded3c8]' : 'text-rose-300 font-medium'}>
+                          {verificationResult.matchesRecipe
+                            ? 'Gericht & Zutaten stimmen überein'
+                            : 'Abweichung bei den Zutaten festgestellt'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {!verificationResult.containsTextOrLogo ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                        )}
+                        <span className={!verificationResult.containsTextOrLogo ? 'text-[#ded3c8]' : 'text-rose-300 font-medium'}>
+                          {!verificationResult.containsTextOrLogo
+                            ? 'Keine Texte oder Logos im Bild (editorial konform)'
+                            : 'Störende Schriften / Labels im Foto erkannt!'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {verificationResult.unexpectedVisibleIngredients && verificationResult.unexpectedVisibleIngredients.length > 0 && (
+                      <div className="p-1.5 rounded bg-rose-950/30 border border-rose-900/40 text-[10px] text-rose-300">
+                        <strong>Unerwartete Zutaten im Bild:</strong> {verificationResult.unexpectedVisibleIngredients.join(', ')}
+                      </div>
+                    )}
+
+                    {verificationResult.notes && verificationResult.notes.length > 0 && (
+                      <div className="text-[9.5px] text-[#9c8e82] italic leading-tight">
+                        „{verificationResult.notes[0]}“
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-[#786c62] leading-relaxed">
+                    Lasse Gemini 3.8 Flash das aktuelle Foto auf Textfreiheit, Buchtauglichkeit und Übereinstimmung mit den Rezeptzutaten überprüfen.
+                  </p>
                 )}
               </div>
             )}

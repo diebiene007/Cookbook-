@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RecipePageData, Season, Category } from './types/recipe';
+import { RecipePageData, Season, Category, ImageVerificationResult } from './types/recipe';
 import { BackgroundCategory, CustomBackground } from './types/backgrounds';
 import { DEFAULT_RECIPES } from './data/defaultRecipes';
 import { DEFAULT_BACKGROUND_CATEGORIES, DEFAULT_BACKGROUNDS, getDefaultBackgroundForSeason } from './data/defaultBackgrounds';
 import { getPageBackgroundById, getDefaultPageBackgroundForSeason } from './data/recipePageBackgrounds';
-import { runQualityAudit } from './utils/qualityCheck';
+import { runQualityAudit, RuntimeAuditContext } from './utils/qualityCheck';
 import { validateAndNormalizeRecipeImport } from './utils/validateRecipe';
 import {
   loadLibraryRecipes,
@@ -113,6 +113,40 @@ export default function App() {
   const [sidebarTab, setSidebarTab] = useState<'editor' | 'library' | 'rules'>('editor');
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const masterPageRef = useRef<HTMLDivElement>(null);
+
+  // Runtime context for quality audit (DOM overflow measurement, real aspect ratio, AI verification)
+  const [auditRuntimeContext, setAuditRuntimeContext] = useState<RuntimeAuditContext>({});
+
+  // Reset image verification and aspect ratio when draft photoUrl changes
+  useEffect(() => {
+    setAuditRuntimeContext(prev => ({
+      ...prev,
+      photoAspectRatio: undefined,
+      imageVerified: undefined,
+      imageVerificationDetails: undefined,
+    }));
+  }, [draftRecipe.photoUrl]);
+
+  // Measure actual A4 Master Page DOM overflow
+  useEffect(() => {
+    const checkDomOverflow = () => {
+      const el = masterPageRef.current;
+      if (!el) return;
+      // The master page is configured with fixed width 794px and height 1123px.
+      // We check if internal scroll dimensions exceed client dimensions by more than 2px (subpixel margin)
+      const hasOverflow =
+        el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2;
+      setAuditRuntimeContext(prev => {
+        if (prev.hasDomOverflow === hasOverflow) return prev;
+        return { ...prev, hasDomOverflow: hasOverflow };
+      });
+    };
+
+    checkDomOverflow();
+    const timer = setTimeout(checkDomOverflow, 150);
+    return () => clearTimeout(timer);
+  }, [draftRecipe, scale, viewMode]);
 
   // Initial hydration of images from IndexedDB
   useEffect(() => {
@@ -204,7 +238,7 @@ export default function App() {
     );
   })();
 
-  const qualityReport = runQualityAudit(draftRecipe);
+  const qualityReport = runQualityAudit(draftRecipe, auditRuntimeContext);
 
   // ─── DIRTY NAVIGATION GUARD ─────────────────────────────────
   const checkDirtyNavigation = (action: () => void) => {
@@ -317,7 +351,7 @@ export default function App() {
     }
 
     // 2. Redaktionelle Qualitätsprüfung
-    const audit = runQualityAudit(draftRecipe);
+    const audit = runQualityAudit(draftRecipe, auditRuntimeContext);
     if (!audit.isReadyForPublish) {
       setIsSaveQualityConfirmOpen(true);
       return false;
@@ -760,6 +794,16 @@ export default function App() {
                 categories={backgroundCategories}
                 onOpenPageMotifSelector={() => setIsPageMotifSelectorOpen(true)}
                 onOpenBackgroundManager={() => setIsBackgroundManagerOpen(true)}
+                onImageVerified={(verification) => {
+                  setAuditRuntimeContext(prev => ({
+                    ...prev,
+                    imageVerified: true,
+                    imageVerificationDetails: {
+                      matchesRecipe: verification.matchesRecipe,
+                      containsTextOrLogo: verification.containsTextOrLogo,
+                    },
+                  }));
+                }}
               />
             )}
 
@@ -854,10 +898,14 @@ export default function App() {
                   }}
                 >
                   <MasterRecipePage
+                    ref={masterPageRef}
                     recipe={draftRecipe}
                     scale={scale}
                     highlightBoxes={highlightBoxes}
                     background={activeBackground}
+                    onImageAspectRatioLoad={(ratio) => {
+                      setAuditRuntimeContext(prev => ({ ...prev, photoAspectRatio: ratio }));
+                    }}
                   />
                 </div>
 
@@ -875,10 +923,14 @@ export default function App() {
                 }}
               >
                 <MasterRecipePage
+                  ref={masterPageRef}
                   recipe={draftRecipe}
                   scale={scale}
                   highlightBoxes={highlightBoxes}
                   background={activeBackground}
+                  onImageAspectRatioLoad={(ratio) => {
+                    setAuditRuntimeContext(prev => ({ ...prev, photoAspectRatio: ratio }));
+                  }}
                 />
               </div>
 

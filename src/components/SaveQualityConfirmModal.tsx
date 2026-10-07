@@ -19,8 +19,9 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
 }) => {
   if (!isOpen) return null;
 
-  const failedItems = report.items.filter(i => !i.passed);
-  const failureCount = failedItems.length;
+  const unpassedItems = report.items.filter(i => i.status !== 'passed');
+  const failureCount = report.failedCount;
+  const uncheckedCount = report.uncheckedCount;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-150">
@@ -39,7 +40,9 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
               Redaktionelle Hinweise vor dem Speichern
             </h3>
             <p className="text-xs text-amber-300/90 mt-0.5">
-              Das Rezept enthält noch {failureCount} {failureCount === 1 ? 'Abweichung' : 'Abweichungen'}.
+              {failureCount > 0 && `${failureCount} ${failureCount === 1 ? 'Fehler' : 'Fehler'}`}
+              {failureCount > 0 && uncheckedCount > 0 && ' · '}
+              {uncheckedCount > 0 && `${uncheckedCount} noch ungeprüft`}
             </p>
           </div>
           <button
@@ -56,18 +59,29 @@ export const SaveQualityConfirmModal: React.FC<SaveQualityConfirmModalProps> = (
             Für die perfekte Buchveröffentlichung (§1–§15) sollten folgende Punkte beachtet werden:
           </p>
           <div className="space-y-1.5">
-            {failedItems.slice(0, 4).map(item => (
+            {unpassedItems.slice(0, 5).map(item => (
               <div
                 key={item.id}
                 className="p-2 rounded-lg bg-[#161311] border border-[#2d241d] text-[11px] text-[#ded3c8] flex items-start gap-2"
               >
-                <span className="text-amber-400 font-mono text-[10px] mt-0.5">§{item.number}</span>
+                <div className="flex items-center gap-1 mt-0.5 shrink-0">
+                  <span className="text-amber-400 font-mono text-[10px]">§{item.number}</span>
+                  {item.status === 'unchecked' ? (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      Ungeprüft
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                      Fehler
+                    </span>
+                  )}
+                </div>
                 <span className="flex-1 leading-snug">{item.message}</span>
               </div>
             ))}
-            {failureCount > 4 && (
+            {unpassedItems.length > 5 && (
               <div className="text-[10px] text-[#8e8074] text-center pt-1">
-                + {failureCount - 4} weitere redaktionelle Hinweise
+                + {unpassedItems.length - 5} weitere Hinweise in der Qualitätsprüfung
               </div>
             )}
           </div>
