@@ -1,6 +1,6 @@
 import { RecipePageData } from '../types/recipe';
 import { DEFAULT_RECIPES } from '../data/defaultRecipes';
-import { isDataUrl, saveImageBlob, getImageBlob } from './imageStorage';
+import { isDataUrl, saveImageBlob, getImageBlob, deleteImageBlob } from './imageStorage';
 
 export const LIBRARY_STORAGE_KEY = 'rezepte_durchs_jahr_library_v1';
 export const LEGACY_STORAGE_KEY = 'rezepte_durchs_jahr_data_v1';
@@ -15,6 +15,8 @@ export function cloneRecipe(recipe: RecipePageData): RecipePageData {
 
 /**
  * Loads the saved library recipes, handling one-time legacy migration or initial default setup.
+ * Note: Returned recipes may have placeholder photoUrls if their images are stored in IndexedDB.
+ * Call hydrateLibraryRecipes() to resolve IndexedDB blobs.
  */
 export function loadLibraryRecipes(): RecipePageData[] {
   try {
@@ -68,34 +70,68 @@ export function loadLibraryRecipes(): RecipePageData[] {
 }
 
 /**
+ * Prepares a recipe for storage:
+ * - Moves base64 / data URL photos to IndexedDB with a stable asset ID (recipe-image-${recipe.id})
+ * - Keeps localStorage clean by using a lightweight fallback URL for storage
+ * - Returns both storageRecipe (for localStorage) and runtimeRecipe (with object URL for display)
+ */
+export async function prepareRecipeForStorage(recipe: RecipePageData): Promise<{
+  storageRecipe: RecipePageData;
+  runtimeRecipe: RecipePageData;
+}> {
+  const copy = cloneRecipe(recipe);
+  let photoAssetId = copy.photoAssetId;
+  let runtimePhotoUrl = copy.photoUrl;
+
+  // If there's a fresh base64 image, persist to IndexedDB with stable ID
+  if (isDataUrl(copy.photoUrl)) {
+    try {
+      const assetId = `recipe-image-${copy.id}`;
+      await saveImageBlob(assetId, copy.photoUrl);
+      photoAssetId = assetId;
+      const objectUrl = await getImageBlob(assetId);
+      if (objectUrl) {
+        runtimePhotoUrl = objectUrl;
+      }
+    } catch (imgErr) {
+      console.warn('Failed to save image to IndexedDB', imgErr);
+    }
+  }
+
+  const storageRecipe: RecipePageData = {
+    ...copy,
+    photoAssetId,
+    photoUrl: photoAssetId ? DEFAULT_RECIPES[0].photoUrl : copy.photoUrl,
+  };
+
+  const runtimeRecipe: RecipePageData = {
+    ...copy,
+    photoAssetId,
+    photoUrl: runtimePhotoUrl,
+  };
+
+  return { storageRecipe, runtimeRecipe };
+}
+
+/**
  * Persists the library recipes to LocalStorage.
  * Large Base64 images are moved to IndexedDB and referenced by photoAssetId
  * to avoid localStorage quota errors.
+ * Returns hydrated runtime recipes.
  */
-export async function persistLibraryRecipes(recipes: RecipePageData[]): Promise<void> {
+export async function persistLibraryRecipes(recipes: RecipePageData[]): Promise<RecipePageData[]> {
   try {
-    // Process recipes: offload data URLs to IndexedDB
     const sanitizedList: RecipePageData[] = [];
+    const runtimeList: RecipePageData[] = [];
 
     for (const recipe of recipes) {
-      const copy = cloneRecipe(recipe);
-
-      if (isDataUrl(copy.photoUrl)) {
-        try {
-          const assetId = `img-${copy.id}-${Date.now()}`;
-          await saveImageBlob(assetId, copy.photoUrl);
-          copy.photoAssetId = assetId;
-          // Keep a temporary lightweight placeholder or relative path in JSON
-          copy.photoUrl = DEFAULT_RECIPES[0].photoUrl;
-        } catch (imgErr) {
-          console.warn('Failed to save image to IndexedDB, keeping URL', imgErr);
-        }
-      }
-
-      sanitizedList.push(copy);
+      const { storageRecipe, runtimeRecipe } = await prepareRecipeForStorage(recipe);
+      sanitizedList.push(storageRecipe);
+      runtimeList.push(runtimeRecipe);
     }
 
     localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(sanitizedList));
+    return runtimeList;
   } catch (err) {
     console.error('Failed to persist library recipes', err);
     throw err;
@@ -103,7 +139,7 @@ export async function persistLibraryRecipes(recipes: RecipePageData[]): Promise<
 }
 
 /**
- * Hydrates a recipe with its IndexedDB image blob if photoAssetId is present.
+ * Hydrates a single recipe with its IndexedDB image blob if photoAssetId is present.
  */
 export async function hydrateRecipeImage(recipe: RecipePageData): Promise<RecipePageData> {
   if (recipe.photoAssetId) {
@@ -121,3 +157,24 @@ export async function hydrateRecipeImage(recipe: RecipePageData): Promise<Recipe
   }
   return recipe;
 }
+
+/**
+ * Hydrates an array of recipes from IndexedDB.
+ */
+export async function hydrateLibraryRecipes(recipes: RecipePageData[]): Promise<RecipePageData[]> {
+  return Promise.all(recipes.map(hydrateRecipeImage));
+}
+
+/**
+ * Deletes associated IndexedDB image asset for a recipe if present.
+ */
+export async function deleteRecipeAsset(photoAssetId?: string): Promise<void> {
+  if (photoAssetId) {
+    try {
+      await deleteImageBlob(photoAssetId);
+    } catch (err) {
+      console.warn('Failed to delete recipe image asset', err);
+    }
+  }
+}
+

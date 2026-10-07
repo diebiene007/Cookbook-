@@ -17,7 +17,7 @@ export function runQualityAudit(
   const items: QualityCheckItem[] = [];
 
   const createItem = (
-    itemData: Omit<QualityCheckItem, 'passed'> & { status?: QualityCheckStatus; passed?: boolean }
+    itemData: Omit<QualityCheckItem, 'passed' | 'status'> & { status?: QualityCheckStatus; passed?: boolean }
   ): QualityCheckItem => {
     const status: QualityCheckStatus =
       itemData.status !== undefined

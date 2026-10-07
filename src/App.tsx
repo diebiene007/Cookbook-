@@ -5,9 +5,13 @@ import { DEFAULT_RECIPES } from './data/defaultRecipes';
 import { DEFAULT_BACKGROUND_CATEGORIES, DEFAULT_BACKGROUNDS, getDefaultBackgroundForSeason } from './data/defaultBackgrounds';
 import { getPageBackgroundById, getDefaultPageBackgroundForSeason } from './data/recipePageBackgrounds';
 import { runQualityAudit } from './utils/qualityCheck';
+import { validateAndNormalizeRecipeImport } from './utils/validateRecipe';
 import {
   loadLibraryRecipes,
   persistLibraryRecipes,
+  hydrateLibraryRecipes,
+  hydrateRecipeImage,
+  deleteRecipeAsset,
   cloneRecipe,
 } from './utils/libraryStorage';
 import { MasterRecipePage } from './components/MasterRecipePage';
@@ -107,6 +111,33 @@ export default function App() {
   const [sidebarTab, setSidebarTab] = useState<'editor' | 'library' | 'rules'>('editor');
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+
+  // Initial hydration of images from IndexedDB
+  useEffect(() => {
+    let isMounted = true;
+    const hydrateImages = async () => {
+      try {
+        const hydratedList = await hydrateLibraryRecipes(savedRecipes);
+        if (!isMounted) return;
+        setSavedRecipes(hydratedList);
+
+        // Also hydrate draftRecipe if it has a photoAssetId
+        if (draftRecipe.photoAssetId) {
+          const hydratedDraft = await hydrateRecipeImage(draftRecipe);
+          if (isMounted) {
+            setDraftRecipe(hydratedDraft);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to hydrate recipes from IndexedDB', err);
+      }
+    };
+
+    hydrateImages();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Sync backgrounds & categories to localStorage
   useEffect(() => {
@@ -258,10 +289,12 @@ export default function App() {
         updatedList = [finalized, ...savedRecipes];
       }
 
-      setSavedRecipes(updatedList);
-      await persistLibraryRecipes(updatedList);
+      // Persist to storage (moving base64 images into IndexedDB) and get hydrated runtime representations
+      const runtimeList = await persistLibraryRecipes(updatedList);
+      setSavedRecipes(runtimeList);
 
-      setDraftRecipe(finalized);
+      const savedDraftRuntime = runtimeList.find(r => r.id === finalized.id) || finalized;
+      setDraftRecipe(savedDraftRuntime);
       setIsDirty(false);
       return true;
     } catch (err) {
@@ -396,6 +429,11 @@ export default function App() {
   };
 
   const handleDeleteSavedRecipe = async (recipeId: string) => {
+    const toDelete = savedRecipes.find(r => r.id === recipeId);
+    if (toDelete?.photoAssetId) {
+      await deleteRecipeAsset(toDelete.photoAssetId);
+    }
+
     const updated = savedRecipes.filter(r => r.id !== recipeId);
     setSavedRecipes(updated);
     await persistLibraryRecipes(updated);
@@ -415,14 +453,15 @@ export default function App() {
   };
 
   const handleApplyBackgroundToSeason = async (season: Season, backgroundId: string) => {
+    const now = new Date().toISOString();
     const updated = savedRecipes.map(r =>
-      r.season === season ? { ...r, pageBackgroundId: backgroundId } : r
+      r.season === season ? { ...r, pageBackgroundId: backgroundId, updatedAt: now } : r
     );
-    setSavedRecipes(updated);
-    await persistLibraryRecipes(updated);
+    const runtimeList = await persistLibraryRecipes(updated);
+    setSavedRecipes(runtimeList);
 
     if (draftRecipe.season === season) {
-      setDraftRecipe(prev => ({ ...prev, pageBackgroundId: backgroundId }));
+      setDraftRecipe(prev => ({ ...prev, pageBackgroundId: backgroundId, updatedAt: now }));
     }
   };
 
@@ -474,14 +513,31 @@ export default function App() {
         reader.onload = async ev => {
           try {
             const parsed = JSON.parse(ev.target?.result as string);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setSavedRecipes(parsed);
-              await persistLibraryRecipes(parsed);
-              setDraftRecipe(cloneRecipe(parsed[0]));
-              setIsDirty(false);
+            const result = validateAndNormalizeRecipeImport(parsed);
+
+            if (result.validRecipes.length === 0) {
+              const errorSample = result.errors.slice(0, 3).join('\n• ');
+              alert(
+                `Keine gültigen Rezepte in der JSON-Datei gefunden (${result.invalidCount} fehlerhaft):\n• ${errorSample}`
+              );
+              return;
             }
+
+            if (result.invalidCount > 0) {
+              const proceed = window.confirm(
+                `Achtung: ${result.invalidCount} von ${result.validRecipes.length + result.invalidCount} Rezepten waren fehlerhaft und wurden übersprungen.\n\nMöchtest du die ${result.validRecipes.length} gültigen Rezepte trotzdem importieren?`
+              );
+              if (!proceed) {
+                return;
+              }
+            }
+
+            setSavedRecipes(result.validRecipes);
+            await persistLibraryRecipes(result.validRecipes);
+            setDraftRecipe(cloneRecipe(result.validRecipes[0]));
+            setIsDirty(false);
           } catch (err) {
-            alert('Ungültige JSON-Datei.');
+            alert('Ungültige JSON-Datei: Die Datei konnte nicht als JSON geparst werden.');
           }
         };
         reader.readAsText(file);
@@ -564,9 +620,14 @@ export default function App() {
           <button
             onClick={() => {
               if (savedRecipes.some(r => r.id === draftRecipe.id)) {
-                handleDeleteSavedRecipe(draftRecipe.id);
+                if (window.confirm(`Möchtest du das Rezept „${draftRecipe.title}“ wirklich dauerhaft löschen?`)) {
+                  handleDeleteSavedRecipe(draftRecipe.id);
+                }
               } else {
                 // Draft was never saved, reset to first library recipe
+                if (isDirty && !window.confirm('Entwurf verwerfen und zum ersten Rezept zurückkehren?')) {
+                  return;
+                }
                 const first = savedRecipes[0] || createBlankRecipe();
                 setDraftRecipe(cloneRecipe(first));
                 setIsDirty(false);
