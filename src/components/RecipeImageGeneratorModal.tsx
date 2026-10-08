@@ -202,23 +202,29 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
         reader.readAsDataURL(blob);
       });
     }
-    // Remote or local asset: try fetching client-side to produce Data-URL, fallback to URL if CORS blocks
-    try {
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    // Remote HTTP(S) asset: try fetching client-side to convert into Data-URL.
+    // If CORS or network prevents client reading, throw explicit error instead of falling back to server fetch.
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      try {
         const response = await fetch(imageUrl, { mode: 'cors' });
-        if (response.ok) {
-          const blob = await response.blob();
-          return await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
+        const blob = await response.blob();
+        return await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        throw new Error(
+          'Das Foto ist nutzbar, konnte aber aufgrund externer Zugriffsbeschränkungen (CORS) nicht visuell geprüft werden.'
+        );
       }
-    } catch {
-      // CORS or network failure: fallback to sending raw URL to server
     }
+
+    // Local assets or others remain as path string (to be checked by server in src/assets/images/)
     return imageUrl;
   };
 

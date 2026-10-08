@@ -657,63 +657,34 @@ app.post('/api/verify-recipe-image', async (req, res) => {
     let base64Data = '';
 
     if (imageUrl.startsWith('data:image/')) {
-      const parts = imageUrl.split(';base64,');
-      mimeType = parts[0].split(':')[1] || 'image/png';
-      base64Data = parts[1];
-    } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // SSRF protection: validate URL and block private / loopback IP ranges
-      const parsedUrl = new URL(imageUrl);
-      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-        return res.status(400).json({ error: 'Ungültiges URL-Protokoll.' });
+      // Validate Data-URL structure and allowed MIME types (JPEG, PNG, WEBP)
+      const match = imageUrl.match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,(.+)$/i);
+      if (!match) {
+        return res.status(400).json({
+          error: 'Ungültige oder nicht unterstützte Bild-Data-URL. Erlaubt sind nur image/jpeg, image/png und image/webp.',
+        });
       }
+      mimeType = match[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : match[1].toLowerCase();
+      base64Data = match[2];
 
-      const hostname = parsedUrl.hostname.toLowerCase();
-      const isBlockedHost =
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname === '0.0.0.0' ||
-        hostname === '::1' ||
-        hostname.endsWith('.local') ||
-        hostname.endsWith('.internal');
-
-      // Check common private IPv4 patterns (10.x, 172.16-31.x, 192.168.x, 169.254.x)
-      const isPrivateIp =
-        /^10\./.test(hostname) ||
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
-        /^192\.168\./.test(hostname) ||
-        /^169\.254\./.test(hostname);
-
-      if (isBlockedHost || isPrivateIp) {
-        return res.status(403).json({ error: 'Zugriff auf interne oder private Netzwerkadressen ist nicht gestattet.' });
+      // Limit decoded payload to 10 MB
+      const buffer = Buffer.from(base64Data, 'base64');
+      if (buffer.byteLength > 10 * 1024 * 1024) {
+        return res.status(400).json({
+          error: 'Bilddatei überschreitet die maximale Größe von 10 MB.',
+        });
       }
-
-      const imgRes = await fetch(imageUrl, {
-        headers: { Accept: 'image/*' },
-        signal: AbortSignal.timeout(10000), // 10s timeout
+    } else if (
+      imageUrl.startsWith('http://') ||
+      imageUrl.startsWith('https://') ||
+      imageUrl.startsWith('blob:') ||
+      imageUrl.startsWith('file:') ||
+      imageUrl.startsWith('ftp:')
+    ) {
+      // Reject remote and non-data protocols
+      return res.status(400).json({
+        error: 'Externe Bild-URLs müssen vor der Verifikation clientseitig als Data-URL übertragen werden.',
       });
-
-      if (!imgRes.ok) {
-        throw new Error(`Konnte externes Bild nicht laden (HTTP ${imgRes.status})`);
-      }
-
-      const contentType = imgRes.headers.get('content-type') || '';
-      if (!contentType.toLowerCase().startsWith('image/')) {
-        return res.status(400).json({ error: 'Die angegebene URL liefert keinen gültigen Bild-Content-Type.' });
-      }
-
-      const contentLength = Number(imgRes.headers.get('content-length') || 0);
-      if (contentLength > 10 * 1024 * 1024) {
-        return res.status(400).json({ error: 'Bilddatei überschreitet die maximale Größe von 10 MB.' });
-      }
-
-      const arrayBuffer = await imgRes.arrayBuffer();
-      if (arrayBuffer.byteLength > 10 * 1024 * 1024) {
-        return res.status(400).json({ error: 'Bilddatei überschreitet die maximale Größe von 10 MB.' });
-      }
-
-      const buffer = Buffer.from(arrayBuffer);
-      base64Data = buffer.toString('base64');
-      mimeType = contentType;
     } else {
       // Local workspace asset: strictly restricted to src/assets/images/ with trailing separator
       const cleanedPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
