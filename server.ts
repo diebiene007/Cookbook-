@@ -661,32 +661,92 @@ app.post('/api/verify-recipe-image', async (req, res) => {
       mimeType = parts[0].split(':')[1] || 'image/png';
       base64Data = parts[1];
     } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      const imgRes = await fetch(imageUrl);
+      // SSRF protection: validate URL and block private / loopback IP ranges
+      const parsedUrl = new URL(imageUrl);
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        return res.status(400).json({ error: 'Ungültiges URL-Protokoll.' });
+      }
+
+      const hostname = parsedUrl.hostname.toLowerCase();
+      const isBlockedHost =
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '0.0.0.0' ||
+        hostname === '::1' ||
+        hostname.endsWith('.local') ||
+        hostname.endsWith('.internal');
+
+      // Check common private IPv4 patterns (10.x, 172.16-31.x, 192.168.x, 169.254.x)
+      const isPrivateIp =
+        /^10\./.test(hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+        /^192\.168\./.test(hostname) ||
+        /^169\.254\./.test(hostname);
+
+      if (isBlockedHost || isPrivateIp) {
+        return res.status(403).json({ error: 'Zugriff auf interne oder private Netzwerkadressen ist nicht gestattet.' });
+      }
+
+      const imgRes = await fetch(imageUrl, {
+        headers: { Accept: 'image/*' },
+        signal: AbortSignal.timeout(10000), // 10s timeout
+      });
+
       if (!imgRes.ok) {
         throw new Error(`Konnte externes Bild nicht laden (HTTP ${imgRes.status})`);
       }
+
+      const contentType = imgRes.headers.get('content-type') || '';
+      if (!contentType.toLowerCase().startsWith('image/')) {
+        return res.status(400).json({ error: 'Die angegebene URL liefert keinen gültigen Bild-Content-Type.' });
+      }
+
+      const contentLength = Number(imgRes.headers.get('content-length') || 0);
+      if (contentLength > 10 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Bilddatei überschreitet die maximale Größe von 10 MB.' });
+      }
+
       const arrayBuffer = await imgRes.arrayBuffer();
+      if (arrayBuffer.byteLength > 10 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Bilddatei überschreitet die maximale Größe von 10 MB.' });
+      }
+
       const buffer = Buffer.from(arrayBuffer);
       base64Data = buffer.toString('base64');
-      mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+      mimeType = contentType;
     } else {
-      // Local workspace asset: strictly restricted to src/assets/images/
+      // Local workspace asset: strictly restricted to src/assets/images/ with trailing separator
       const cleanedPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
       const allowedDir = path.resolve(__dirname, 'src/assets/images');
+      const allowedPrefix = allowedDir + path.sep;
       const localFilePath = path.resolve(__dirname, cleanedPath);
 
-      if (!localFilePath.startsWith(allowedDir)) {
+      const isAllowed = localFilePath.startsWith(allowedPrefix);
+      if (!isAllowed) {
         return res.status(403).json({
           error: 'Zugriff verweigert: Nur Bilder aus dem Verzeichnis src/assets/images/ sind zulässig.',
+        });
+      }
+
+      const ext = path.extname(localFilePath).toLowerCase();
+      const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
+      if (!allowedExts.includes(ext)) {
+        return res.status(403).json({
+          error: 'Nur Bilddateien (.jpg, .jpeg, .png, .webp) sind zulässig.',
         });
       }
 
       if (!fs.existsSync(localFilePath)) {
         throw new Error(`Lokales Bild nicht gefunden unter: ${imageUrl}`);
       }
+
+      const stat = fs.statSync(localFilePath);
+      if (stat.size > 10 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Lokale Bilddatei überschreitet die maximale Größe von 10 MB.' });
+      }
+
       const buffer = fs.readFileSync(localFilePath);
       base64Data = buffer.toString('base64');
-      const ext = path.extname(localFilePath).toLowerCase();
       if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
       else if (ext === '.webp') mimeType = 'image/webp';
       else mimeType = 'image/png';
@@ -797,23 +857,35 @@ Aufgabe:
       return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung: Booleans fehlen.' });
     }
 
-    const unexpectedVisibleIngredients = Array.isArray(rawParsed.unexpectedVisibleIngredients)
-      ? rawParsed.unexpectedVisibleIngredients.filter((x: any) => typeof x === 'string')
-      : [];
-    const missingKeyComponents = Array.isArray(rawParsed.missingKeyComponents)
-      ? rawParsed.missingKeyComponents.filter((x: any) => typeof x === 'string')
-      : [];
-    const notes = Array.isArray(rawParsed.notes)
-      ? rawParsed.notes.filter((x: any) => typeof x === 'string')
-      : [];
+    // Strict validation of array fields
+    if (
+      !Array.isArray(rawParsed.unexpectedVisibleIngredients) ||
+      !rawParsed.unexpectedVisibleIngredients.every((x: any) => typeof x === 'string')
+    ) {
+      return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung: unexpectedVisibleIngredients muss ein Array aus Strings sein.' });
+    }
+
+    if (
+      !Array.isArray(rawParsed.missingKeyComponents) ||
+      !rawParsed.missingKeyComponents.every((x: any) => typeof x === 'string')
+    ) {
+      return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung: missingKeyComponents muss ein Array aus Strings sein.' });
+    }
+
+    if (
+      !Array.isArray(rawParsed.notes) ||
+      !rawParsed.notes.every((x: any) => typeof x === 'string')
+    ) {
+      return res.status(500).json({ error: 'Ungültige Antwort der KI-Bildprüfung: notes muss ein Array aus Strings sein.' });
+    }
 
     const verification = {
       fidelityScore,
       matchesRecipe: rawParsed.matchesRecipe,
-      unexpectedVisibleIngredients,
-      missingKeyComponents,
+      unexpectedVisibleIngredients: rawParsed.unexpectedVisibleIngredients,
+      missingKeyComponents: rawParsed.missingKeyComponents,
       containsTextOrLogo: rawParsed.containsTextOrLogo,
-      notes,
+      notes: rawParsed.notes,
     };
 
     return res.json({ success: true, verification });

@@ -186,17 +186,55 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
   const currentDisplayedUrl =
     activeCompareTab === 'generated' ? generatedImageUrl : recipe.photoUrl;
 
-  // Central verify function sending full RecipePageData
+  // Helper to convert blob: URLs or external images to Base64 data URLs before sending to server
+  const prepareImageForVerification = async (imageUrl: string): Promise<string> => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('data:image/')) {
+      return imageUrl;
+    }
+    if (imageUrl.startsWith('blob:')) {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+    // Remote or local asset: try fetching client-side to produce Data-URL, fallback to URL if CORS blocks
+    try {
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        const response = await fetch(imageUrl, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          return await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch {
+      // CORS or network failure: fallback to sending raw URL to server
+    }
+    return imageUrl;
+  };
+
+  // Central verify function sending prepared image data and full RecipePageData
   const verifyImage = async (targetUrl: string): Promise<ImageVerificationResult | null> => {
     if (!targetUrl) return null;
     setIsVerifying(true);
     setVerificationError(null);
     try {
+      const preparedImageUrl = await prepareImageForVerification(targetUrl);
+
       const res = await fetch('/api/verify-recipe-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageUrl: targetUrl,
+          imageUrl: preparedImageUrl,
           recipe,
         }),
       });
@@ -207,6 +245,7 @@ export const RecipeImageGeneratorModal: React.FC<RecipeImageGeneratorModalProps>
       }
 
       setVerificationResult(data.verification);
+      // Keep the original targetUrl as the verified image identity
       setVerifiedImageUrl(targetUrl);
       return data.verification;
     } catch (err: any) {

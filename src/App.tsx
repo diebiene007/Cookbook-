@@ -337,6 +337,13 @@ export default function App() {
       setSavedRecipes(runtimeList);
 
       const savedDraftRuntime = runtimeList.find(r => r.id === finalized.id) || finalized;
+
+      // If the current image was verified, keep the verification valid for the newly hydrated storage key
+      if (auditRuntimeContext.imageVerified === true) {
+        verifiedImageKeyRef.current =
+          savedDraftRuntime.photoAssetId || savedDraftRuntime.photoUrl;
+      }
+
       setDraftRecipe(savedDraftRuntime);
       setIsDirty(false);
       return true;
