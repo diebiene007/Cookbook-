@@ -182,7 +182,10 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
         {/* Right Column: Auf einen Blick + Nährwerte + Achte auf */}
         <div className="col-span-7 flex flex-col justify-between space-y-2">
           {/* Card: Auf einen Blick */}
-          <div className="bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3">
+          <div
+            className="border border-[#ECDDCF] rounded-lg p-3 shadow-xs"
+            style={{ backgroundColor: 'rgba(250, 242, 234, 0.94)' }}
+          >
             <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#735848] mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#B8683B]"></span>
               Auf einen Blick
@@ -207,16 +210,21 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
                   {quickFacts.totalTimeMin} Min
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 truncate" title={quickFacts.utensils}>
-                <UtensilsCrossed className="w-3.5 h-3.5 text-[#A06440] shrink-0" />
-                <span className="text-[#7C6C62]">Utensilien:</span>
-                <span className="font-medium text-[#29221C] truncate">{quickFacts.utensils}</span>
+              <div className="flex items-start gap-1.5" title={quickFacts.utensils}>
+                <UtensilsCrossed className="w-3.5 h-3.5 text-[#A06440] shrink-0 mt-0.5" />
+                <div className="leading-tight">
+                  <span className="text-[#7C6C62] mr-1">Utensilien:</span>
+                  <span className="font-medium text-[#29221C] break-words">{quickFacts.utensils}</span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Card: Nährwerte pro Portion */}
-          <div className="bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-2.5">
+          <div
+            className="border border-[#ECDDCF] rounded-lg p-2.5 shadow-xs"
+            style={{ backgroundColor: 'rgba(250, 242, 234, 0.94)' }}
+          >
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[9.5px] font-bold tracking-[0.18em] uppercase text-[#735848]">
                 Nährwerte pro Portion
@@ -224,19 +232,31 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
               <span className="text-[9px] text-[#8C7A6D]">Ca.-Angaben</span>
             </div>
             <div className="grid grid-cols-4 gap-1.5 text-center">
-              <div className="bg-[#FFF7F0] border border-[#E9DACD] rounded px-1 py-1">
+              <div
+                className="border border-[#E9DACD] rounded px-1 py-1"
+                style={{ backgroundColor: 'rgba(255, 247, 240, 0.96)' }}
+              >
                 <div className="text-[12px] font-bold text-[#271E18]">{nutrition.calories}</div>
                 <div className="text-[8.5px] text-[#8C7A6D] uppercase">kcal</div>
               </div>
-              <div className="bg-[#FFF7F0] border border-[#E9DACD] rounded px-1 py-1">
+              <div
+                className="border border-[#E9DACD] rounded px-1 py-1"
+                style={{ backgroundColor: 'rgba(255, 247, 240, 0.96)' }}
+              >
                 <div className="text-[12px] font-bold text-[#271E18]">{nutrition.carbs} g</div>
                 <div className="text-[8.5px] text-[#8C7A6D] uppercase">Kohlenhydr.</div>
               </div>
-              <div className="bg-[#FFF7F0] border border-[#E9DACD] rounded px-1 py-1">
+              <div
+                className="border border-[#E9DACD] rounded px-1 py-1"
+                style={{ backgroundColor: 'rgba(255, 247, 240, 0.96)' }}
+              >
                 <div className="text-[12px] font-bold text-[#271E18]">{nutrition.protein} g</div>
                 <div className="text-[8.5px] text-[#8C7A6D] uppercase">Proteine</div>
               </div>
-              <div className="bg-[#FFF7F0] border border-[#E9DACD] rounded px-1 py-1">
+              <div
+                className="border border-[#E9DACD] rounded px-1 py-1"
+                style={{ backgroundColor: 'rgba(255, 247, 240, 0.96)' }}
+              >
                 <div className="text-[12px] font-bold text-[#271E18]">{nutrition.fat} g</div>
                 <div className="text-[8.5px] text-[#8C7A6D] uppercase">Fette</div>
               </div>
@@ -244,7 +264,10 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
           </div>
 
           {/* Card: Achte auf */}
-          <div className="bg-[#F8EFE4] border-l-2 border-l-[#C46637] border-y border-r border-[#ECDDCF] rounded-r-lg p-2 flex items-start gap-2">
+          <div
+            className="border-l-2 border-l-[#C46637] border-y border-r border-[#ECDDCF] rounded-r-lg p-2 flex items-start gap-2 shadow-xs"
+            style={{ backgroundColor: 'rgba(248, 239, 228, 0.95)' }}
+          >
             <AlertCircle className="w-3.5 h-3.5 text-[#C46637] shrink-0 mt-0.5" />
             <div className="text-[10px] leading-[1.34] text-[#42342A]">
               <span className="font-bold tracking-wider uppercase text-[#C46637] mr-1">
@@ -260,9 +283,10 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
           3. ZUTATEN: 2 BALANCIERTE SPALTEN MIT LOGISCHEN GRUPPEN
           ──────────────────────────────────────────────────────── */}
       <section
-        className={`relative z-10 bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3 mb-3.5 ${
+        className={`relative z-10 border border-[#ECDDCF] rounded-lg p-3 mb-3.5 shadow-xs ${
           highlightBoxes ? 'ring-1 ring-green-400/40' : ''
         }`}
+        style={{ backgroundColor: 'rgba(250, 242, 234, 0.94)' }}
       >
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#735848] flex items-center gap-1.5">
@@ -284,12 +308,12 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
                 </div>
                 <ul className="space-y-0.5">
                   {group.items.map(item => (
-                    <li key={item.id} className="flex items-baseline justify-between gap-1 leading-snug">
-                      <span className="text-[#362C24]">
+                    <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-start leading-snug">
+                      <span className="text-[#362C24] min-w-0 break-words">
                         {item.name}
                       </span>
                       {item.amount && (
-                        <span className="text-[#7A695E] font-medium text-[10.5px] shrink-0 text-right">
+                        <span className="text-[#7A695E] font-medium text-[10.5px] whitespace-nowrap text-right">
                           {item.amount}
                         </span>
                       )}
@@ -311,15 +335,15 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
                   {group.items.map(item => (
                     <li
                       key={item.id}
-                      className={`leading-snug ${
+                      className={
                         item.isGarnishCompact
                           ? 'text-[#5C4D43] italic text-[10.5px] py-0.5'
-                          : 'flex items-baseline justify-between gap-1'
-                      }`}
+                          : 'grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-start leading-snug'
+                      }
                     >
-                      <span className="text-[#362C24]">{item.name}</span>
+                      <span className="text-[#362C24] min-w-0 break-words">{item.name}</span>
                       {item.amount && !item.isGarnishCompact && (
-                        <span className="text-[#7A695E] font-medium text-[10.5px] shrink-0 text-right">
+                        <span className="text-[#7A695E] font-medium text-[10.5px] whitespace-nowrap text-right">
                           {item.amount}
                         </span>
                       )}
@@ -336,9 +360,10 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
           4. ZUBEREITUNG: 2-SPALTIGES GRID MIT SCHRITT-KARTEN (6, 8, 10, 12)
           ──────────────────────────────────────────────────────── */}
       <section
-        className={`relative z-10 bg-[#FAF2EA] border border-[#ECDDCF] rounded-lg p-3 flex-1 flex flex-col justify-between mb-3 ${
+        className={`relative z-10 border border-[#ECDDCF] rounded-lg p-3 flex-1 flex flex-col justify-between mb-3 shadow-xs ${
           highlightBoxes ? 'ring-1 ring-purple-400/40' : ''
         }`}
+        style={{ backgroundColor: 'rgba(250, 242, 234, 0.94)' }}
       >
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#735848] flex items-center gap-1.5">
@@ -355,7 +380,8 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
           {steps.map(step => (
             <div
               key={step.id}
-              className={`bg-[#FFF7F0] border border-[#E9DACD] rounded-md flex gap-2 ${getStepPadding()} transition-all`}
+              className={`border border-[#E9DACD] rounded-md flex gap-2 ${getStepPadding()} transition-all`}
+              style={{ backgroundColor: 'rgba(255, 247, 240, 0.96)' }}
             >
               {/* Step Number */}
               <div className="shrink-0 flex items-start pt-0.5">
@@ -366,7 +392,7 @@ export const MasterRecipePage = forwardRef<HTMLDivElement, MasterRecipePageProps
 
               {/* Title & Action Text */}
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#2B2119] mb-0.5 truncate">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#2B2119] mb-0.5 break-words">
                   {step.title}
                 </div>
                 <p className={`text-[#45372E] text-pretty ${getStepTextSize()}`}>
