@@ -954,7 +954,7 @@ export default function App() {
             /* Standard / Actual View */
             <div className="flex flex-col items-center">
               <div
-                className="relative shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
+                className="relative shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden"
                 style={{
                   width: `${Math.round(794 * scale)}px`,
                   height: `${Math.round(1123 * scale)}px`,
