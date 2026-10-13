@@ -273,3 +273,14 @@ export function getPageBackgroundById(id?: string, season: Season = 'Frühling')
   }
   return getDefaultPageBackgroundForSeason(season);
 }
+
+/**
+ * Resolves the public image path for a given background ID.
+ * Returns null for 'page-bg-neutral' or when no valid ID is passed.
+ */
+export function getPageBackgroundImagePath(id?: string): string | null {
+  if (!id || id === 'page-bg-neutral') {
+    return null;
+  }
+  return `/page-backgrounds/${id}.png`;
+}
